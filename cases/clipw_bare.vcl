@@ -5,6 +5,7 @@
 .init_vi_all
 --enter
 --endenter
+   fcset       0x000000
    lq          vA,   1(vi00)
    clipw.xyz   vA, vA
    fcand       VI01, 0x3FFFF
