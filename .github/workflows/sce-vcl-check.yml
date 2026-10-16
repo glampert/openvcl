@@ -1,0 +1,112 @@
+# Runs SCE's vcl 1.4beta7 (the binary the Tyra engine builds its VU1 programs
+# with) on a few CLIPw operand forms, and on Tyra's own programs, to record what
+# SCE VCL actually accepts and emits. Observational: vcl's verdicts are reported,
+# not asserted. Results go to the log, the step summary, annotations and an
+# artifact.
+#
+# vcl is a 32-bit i386 Linux binary; Tyra's Dockerfile runs it on Ubuntu 20.04
+# with libstdc++5:i386, and so does this job.
+
+name: SCE vcl check
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TYRA_COMMIT: c59f406af134713b62656114846ac8d588c6247c
+  VCL_SHA256: 83bee75205b5b0f37dbefc2c2769eba2c353befa532472c49aedb2ebaf168274
+  VCLPP_COMMIT: 95911cd3f6842978b403b6f3a9d1dbcdfe21f09e
+
+jobs:
+  vcl:
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install the 32-bit runtime, git and a compiler
+        run: |
+          dpkg --add-architecture i386
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates git make g++ libc6:i386 libstdc++5:i386
+
+      - uses: actions/checkout@v4
+
+      - name: Fetch Tyra (pinned) and check the vcl binary
+        run: |
+          git init -q tyra
+          git -C tyra fetch -q --depth 1 https://github.com/h4570/tyra.git "$TYRA_COMMIT"
+          git -C tyra checkout -q FETCH_HEAD
+          echo "$VCL_SHA256  tyra/assets/vcl" | sha256sum -c -
+          chmod +x tyra/assets/vcl
+          echo "VCL=$PWD/tyra/assets/vcl" >> "$GITHUB_ENV"
+
+      - name: vcl on the CLIPw cases
+        run: |
+          mkdir -p out/cases
+          {
+            echo "## CLIPw cases (vcl 1.4beta7)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for f in cases/*.vcl; do
+            n=$(basename "$f" .vcl)
+            set +e
+            "$VCL" "$f" > "out/cases/$n.vsm" 2> "out/cases/$n.err"
+            rc=$?
+            set -e
+            clip=$(grep -i 'clipw' "out/cases/$n.vsm" | sed 's/^[[:space:]]*//' | head -3 || true)
+            err=$(head -5 "out/cases/$n.err" || true)
+            echo "=== $n: exit $rc"
+            echo "--- source clipw line: $(grep -i clipw "$f")"
+            echo "--- stdout:"; cat "out/cases/$n.vsm"
+            echo "--- stderr:"; cat "out/cases/$n.err"
+            msg="exit=$rc; source: $(grep -i clipw "$f" | sed 's/^[[:space:]]*//'); emitted: ${clip:-<none>}; stderr: ${err:-<none>}"
+            printf '%s\n' "- **$n**: $msg" >> "$GITHUB_STEP_SUMMARY"
+            msg="${msg//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
+            echo "::notice title=case $n::$msg"
+          done
+
+      - name: Build vclpp (pinned)
+        run: |
+          git clone -q https://github.com/glampert/vclpp.git vclpp
+          git -C vclpp checkout -q "$VCLPP_COMMIT"
+          git -C vclpp submodule update -q --init --recursive
+          make -C vclpp
+
+      - name: vcl on Tyra's VU1 programs
+        run: |
+          mkdir -p out/tyra
+          echo "## Tyra programs (vclpp -> vcl 1.4beta7)" >> "$GITHUB_STEP_SUMMARY"
+          ok=0; bad=0; lines=""
+          cd tyra/engine
+          for f in $(find src -name '*.vclpp' | sort); do
+            n=$(basename "$f" .vclpp)
+            ../../vclpp/vclpp "$f" "../../out/tyra/$n.vcl"
+            set +e
+            "$VCL" "../../out/tyra/$n.vcl" > "../../out/tyra/$n.vsm" 2> "../../out/tyra/$n.err"
+            rc=$?
+            set -e
+            bare=$(grep -c -E '^[[:space:]]*clipw(\.xyz)?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*,[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*$' "../../out/tyra/$n.vcl" || true)
+            emitted=$(grep -i 'clipw' "../../out/tyra/$n.vsm" | sed 's/^[[:space:]]*//' | head -1 || true)
+            echo "=== $n: exit $rc, bare clipw lines in source: $bare"
+            echo "--- first emitted clipw: ${emitted:-<none>}"
+            echo "--- stderr:"; cat "../../out/tyra/$n.err"
+            if [ "$rc" = 0 ]; then ok=$((ok+1)); else bad=$((bad+1)); fi
+            line="$n: exit=$rc bare_clipw=$bare first_emitted=${emitted:-<none>}"
+            printf '%s\n' "- $line" >> "$GITHUB_STEP_SUMMARY"
+            lines="$lines$line"$'\n'
+          done
+          msg="$ok compiled, $bad failed"$'\n'"$lines"
+          msg="${msg//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
+          echo "::notice title=tyra programs::$msg"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sce-vcl-results
+          path: out/
