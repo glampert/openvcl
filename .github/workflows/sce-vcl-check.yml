@@ -47,35 +47,39 @@ jobs:
           chmod +x tyra/assets/vcl
           echo "VCL=$PWD/tyra/assets/vcl" >> "$GITHUB_ENV"
 
-      # Each case's first line may be '; show: <mnemonic regex>', naming the
-      # instructions to report (default: clipw). All cases go into one notice,
-      # since GitHub keeps only 10 notices per step.
+      # Reports each case's exit status, every instruction pair vcl emitted
+      # (other than nop/nop) and its diagnostics without the INFO banner lines.
+      # GitHub keeps only 10 notices per step and truncates long ones, so the
+      # cases go out 6 to a notice.
       - name: vcl on the cases
         run: |
           mkdir -p out/cases
           echo "## Cases (vcl 1.4beta7)" >> "$GITHUB_STEP_SUMMARY"
-          lines=""
+          notice() {
+            local msg="${1//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
+            echo "::notice title=cases $2::$msg"
+          }
+          lines=""; count=0; part=1
           for f in cases/*.vcl; do
             n=$(basename "$f" .vcl)
-            pat=$(sed -n '1s/^; *show: *//p' "$f")
-            pat="(^|[[:space:]])(${pat:-clipw})[.[:space:]]"
             set +e
             "$VCL" "$f" > "out/cases/$n.vsm" 2> "out/cases/$n.err"
             rc=$?
             set -e
-            src=$(grep -v '^;' "$f" | grep -i -E "$pat" | sed 's/^[[:space:]]*//' | paste -sd '|' - || true)
-            emitted=$(grep -i -E "$pat" "out/cases/$n.vsm" | sed 's/^[[:space:]]*//; s/[[:space:]][[:space:]]*/ /g' | head -6 | paste -sd '|' - || true)
-            err=$(head -5 "out/cases/$n.err" | paste -sd '|' - || true)
+            emitted=$(grep -v -E '^[[:space:]]*($|[.;])|:[[:space:]]*$' "out/cases/$n.vsm" \
+                        | sed 's/;.*$//; s/^[[:space:]]*//; s/[[:space:]][[:space:]]*/ /g; s/ $//' \
+                        | grep -v -i -E '^(nop( nop)?)?$' | paste -sd '|' - || true)
+            err=$(grep -v -E '^INFO: (OS_Init|OS_End|Opt::|skip target|UBS:)' "out/cases/$n.err" \
+                    | head -6 | paste -sd '|' - || true)
             echo "=== $n: exit $rc"
-            echo "--- source: $src"
             echo "--- stdout:"; cat "out/cases/$n.vsm"
             echo "--- stderr:"; cat "out/cases/$n.err"
-            line="$n: exit=$rc; source: $src; emitted: ${emitted:-<none>}; stderr: ${err:-<none>}"
+            line="$n: exit=$rc; emitted: ${emitted:-<none>}; stderr: ${err:-<none>}"
             printf '%s\n' "- $line" >> "$GITHUB_STEP_SUMMARY"
-            lines="$lines$line"$'\n'
+            lines="$lines$line"$'\n'; count=$((count+1))
+            if [ "$count" = 6 ]; then notice "$lines" "$part"; lines=""; count=0; part=$((part+1)); fi
           done
-          msg="${lines//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
-          echo "::notice title=cases::$msg"
+          if [ -n "$lines" ]; then notice "$lines" "$part"; fi
 
       - name: Build vclpp (pinned)
         run: |

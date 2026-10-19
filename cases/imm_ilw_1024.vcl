@@ -1,4 +1,3 @@
-; show: ilw
 .name ImmCase_ilw_1024
 .syntax new
 .vu

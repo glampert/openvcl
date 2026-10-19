@@ -1,4 +1,3 @@
-; show: sq
 .name ImmCase_sq_1024
 .syntax new
 .vu

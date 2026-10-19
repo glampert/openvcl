@@ -1,4 +1,3 @@
-; show: iaddiu
 .name ImmCase_iaddiu_hex8000
 .syntax new
 .vu

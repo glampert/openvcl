@@ -1,4 +1,3 @@
-; show: isw
 .name ImmCase_isw_2000
 .syntax new
 .vu

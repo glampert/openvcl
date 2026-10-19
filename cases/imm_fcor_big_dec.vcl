@@ -1,4 +1,3 @@
-; show: fc[a-z]+
 .name ImmCase_fcor_big_dec
 .syntax new
 .vu

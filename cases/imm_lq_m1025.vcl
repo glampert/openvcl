@@ -1,4 +1,3 @@
-; show: lq
 .name ImmCase_lq_m1025
 .syntax new
 .vu

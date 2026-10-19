@@ -1,4 +1,3 @@
-; show: iaddiu|isubiu
 .name ImmCase_iaddiu_edges
 .syntax new
 .vu

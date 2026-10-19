@@ -1,4 +1,3 @@
-; show: iaddi
 .name ImmCase_iaddi_16
 .syntax new
 .vu

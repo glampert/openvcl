@@ -1,4 +1,3 @@
-; show: [ls]q
 .name ImmCase_mem_expr
 .syntax new
 .vu

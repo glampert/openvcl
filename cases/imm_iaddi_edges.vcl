@@ -1,4 +1,3 @@
-; show: iaddi
 .name ImmCase_iaddi_edges
 .syntax new
 .vu

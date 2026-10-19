@@ -1,4 +1,3 @@
-; show: isubiu
 .name ImmCase_isubiu_32768
 .syntax new
 .vu
