@@ -239,6 +239,12 @@ std::string normalizeVuMnemonic( const std::string& word );
 std::string vuInstructionParameterSummary( const VuInstructionInfo& info );
 const char* vuInstructionDescription( const VuInstructionInfo& info );
 
+// The values an instruction's integer immediate field (the offset, for
+// LQ/SQ/ILW/ISW) can encode. dvp-as keeps only the low bits of a value
+// outside it, without a diagnostic. Returns false for an instruction
+// without such a field.
+bool vuInstructionImmediateRange( VuInstructionOpcode opcode, long& minimum, long& maximum );
+
 }
 
 #endif

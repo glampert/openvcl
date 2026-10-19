@@ -2398,7 +2398,10 @@ namespace
 			    access.hasMemoryBase
 			    ? findInductionUpdate( opportunity.inductionUpdates, access.memoryBaseRegister )
 			    : NULL;
-			if( update && update->stepKnown && access.hasMemoryOffset )
+			// an offset the load can't encode is as good as unknown
+			if( update && update->stepKnown && access.hasMemoryOffset
+			    && access.memoryOffset + update->step >= -1024
+			    && access.memoryOffset + update->step <= 1023 )
 			{
 				prefetch.hasNextIterationOffset = true;
 				prefetch.nextIterationOffset = access.memoryOffset + update->step;
@@ -2464,8 +2467,14 @@ namespace
 			                                         tokenIndex,
 			                                         stepAfterStore ) )
 			{
-				suffixStore.hasNextIterationOffset = true;
-				suffixStore.nextIterationOffset = access.memoryOffset - stepAfterStore;
+				// an offset the store can't encode is as good as unknown, which
+				// blocks the drain (store_without_next_offset)
+				const long nextIterationOffset = access.memoryOffset - stepAfterStore;
+				if( nextIterationOffset >= -1024 && nextIterationOffset <= 1023 )
+				{
+					suffixStore.hasNextIterationOffset = true;
+					suffixStore.nextIterationOffset = nextIterationOffset;
+				}
 				suffixStore.drainCandidate = suffixStore.usesInductionRegister;
 			}
 
@@ -3396,6 +3405,37 @@ namespace
 		}
 	}
 
+	// True when a cyclic-prefix load or store, its offset shifted as above,
+	// would no longer fit the instruction's 11-bit offset. The insertion point
+	// is not settled yet when a candidate is checked, so every known update of
+	// the base register counts.
+	bool cyclicPrefixOffsetsLeaveImmediateRange( const VuLoopPipelineOpportunity& candidate,
+	                                             const std::vector<const Token*>& indexedTokens )
+	{
+		for( std::vector<unsigned int>::const_iterator p = candidate.multiQCyclicPrefixTokenIndices.begin();
+		     p != candidate.multiQCyclicPrefixTokenIndices.end(); ++p )
+		{
+			VuTokenResourceAccess access;
+			if( *p >= indexedTokens.size()
+			    || !buildVuTokenResourceAccess( *indexedTokens[*p], access )
+			    || access.memoryKind == VU_MEMORY_NONE
+			    || !access.hasMemoryBase
+			    || !access.hasMemoryOffset )
+				continue;
+
+			for( std::vector<VuLoopInductionUpdate>::const_iterator i = candidate.inductionUpdates.begin();
+			     i != candidate.inductionUpdates.end(); ++i )
+			{
+				if( !i->stepKnown || i->registerName != access.memoryBaseRegister )
+					continue;
+				const long adjustedOffset = access.memoryOffset + i->step;
+				if( adjustedOffset < -1024 || adjustedOffset > 1023 )
+					return true;
+			}
+		}
+		return false;
+	}
+
 	Token adjustedMultiQCyclicPrefixToken( const Token& token,
 	                                       const std::vector<VuSoftwarePipelineRotation>& rotations,
 	                                       const std::vector<VuLoopInductionUpdate>& inductionUpdates,
@@ -3549,6 +3589,8 @@ namespace
 		if( tokenIndicesHaveUnsafeMultiQCyclicPrefixSideEffects( candidate.multiQCyclicPrefixTokenIndices,
 		                                                         indexedTokens,
 		                                                         allowGuardedPlainStores ) )
+			return false;
+		if( cyclicPrefixOffsetsLeaveImmediateRange( candidate, indexedTokens ) )
 			return false;
 		if( tokenIndicesContainVisibleLabel( candidate.multiQCyclicPrefixTokenIndices,
 		                                     indexedTokens,
@@ -10368,7 +10410,12 @@ bool advanceVuStoreBaseUpdates( std::list<Token>& tokens )
 			long offset = 0;
 			if( storeUsesBaseWithKnownOffset( *i, induction.registerName, offset ) )
 			{
-				(void)offset;
+				const long adjustedOffset = offset - induction.step;
+				if( adjustedOffset < -1024 || adjustedOffset > 1023 )
+				{
+					canMove = false;
+					break;
+				}
 				continue;
 			}
 			if( tokenReadsOrWritesRegisterKey( *i, induction.registerName ) )

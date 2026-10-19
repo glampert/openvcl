@@ -5,6 +5,7 @@
 #include "Math.h"
 
 #include <iomanip>
+#include <math.h>
 #include <sstream>
 
 namespace vcl
@@ -57,6 +58,76 @@ namespace
 			return false;
 		offset = static_cast<long>( e.result() );
 		return true;
+	}
+
+	// An integer literal as the assembler reads it (hex 0x.., binary 0b..,
+	// octal 0.., or decimal), optionally signed.
+	bool parseAssemblerInteger( const std::string& text, double& value )
+	{
+		std::string::size_type i = text.find_first_not_of( " \t" );
+		const std::string::size_type end = text.find_last_not_of( " \t" );
+		if( std::string::npos == i )
+			return false;
+
+		const bool negative = ('-' == text[i]);
+		if( ('-' == text[i]) || ('+' == text[i]) )
+			++i;
+		if( i > end )
+			return false;
+
+		unsigned int base = 10;
+		if( ('0' == text[i]) && (i < end) )
+		{
+			const char prefix = text[i+1];
+			if( ('x' == prefix) || ('X' == prefix) )
+				base = 16;
+			else if( ('b' == prefix) || ('B' == prefix) )
+				base = 2;
+			else
+				base = 8;
+			i += (8 == base) ? 1 : 2;
+			if( i > end )
+				return false;
+		}
+
+		double result = 0;
+		for( ; i <= end; ++i )
+		{
+			const char c = text[i];
+			unsigned int digit;
+			if( (c >= '0') && (c <= '9') )
+				digit = c - '0';
+			else if( (c >= 'a') && (c <= 'f') )
+				digit = c - 'a' + 10;
+			else if( (c >= 'A') && (c <= 'F') )
+				digit = c - 'A' + 10;
+			else
+				return false;
+			if( digit >= base )
+				return false;
+			result = (result * base) + digit;
+		}
+
+		value = negative ? -result : result;
+		return true;
+	}
+
+	// The value an immediate is encoded as: CodeGenerator writes what Expression
+	// can evaluate as an integer (truncated, as in C), and leaves any other text
+	// to the assembler.
+	bool evaluateEncodedImmediate( const Token::Argument& arg, double& value )
+	{
+		Expression e;
+		e.setCustomOperators( Math::mathOperators() );
+		if( (arg.flags() & Token::Argument::EVALUATE) && e.process( arg.immediate() ) && e.solve() )
+		{
+			const double result = e.result();
+			if( result != result )	// NaN
+				return false;
+			value = (result < 0) ? ceil( result ) : floor( result );
+			return true;
+		}
+		return parseAssemblerInteger( arg.immediate(), value );
 	}
 }
 
@@ -192,6 +263,23 @@ bool buildVuTokenResourceAccess( const Token& token, VuTokenResourceAccess& acce
 	}
 
 	return true;
+}
+
+const Token::Argument* findVuTokenImmediate( const Token& token, double& value, long& minimum, long& maximum )
+{
+	const VuInstructionInfo* info = tokenInstructionInfo( token );
+	if( !info || !vuInstructionImmediateRange( info->opcode, minimum, maximum ) )
+		return NULL;
+
+	const std::list<Token::Argument>& args = token.arguments();
+	for( std::list<Token::Argument>::const_iterator i = args.begin(); i != args.end(); ++i )
+	{
+		const bool offset = ((*i).type() == Token::Argument::INTEGER_REGISTER)
+		                    && ((*i).flags() & Token::Argument::INDIRECT);
+		if( ((*i).type() == Token::Argument::IMMEDIATE) || offset )
+			return evaluateEncodedImmediate( *i, value ) ? &(*i) : NULL;
+	}
+	return NULL;
 }
 
 }
