@@ -1,8 +1,8 @@
 # Runs SCE's vcl 1.4beta7 (the binary the Tyra engine builds its VU1 programs
-# with) on a few CLIPw operand forms, and on Tyra's own programs, to record what
-# SCE VCL actually accepts and emits. Observational: vcl's verdicts are reported,
-# not asserted. Results go to the log, the step summary, annotations and an
-# artifact.
+# with) on small cases (CLIPw operand forms, immediate ranges) and on Tyra's own
+# programs, to record what SCE VCL actually accepts and emits. Observational:
+# vcl's verdicts are reported, not asserted. Results go to the log, the step
+# summary, annotations and an artifact.
 #
 # vcl is a 32-bit i386 Linux binary; Tyra's Dockerfile runs it on Ubuntu 20.04
 # with libstdc++5:i386, and so does this job.
@@ -47,29 +47,35 @@ jobs:
           chmod +x tyra/assets/vcl
           echo "VCL=$PWD/tyra/assets/vcl" >> "$GITHUB_ENV"
 
-      - name: vcl on the CLIPw cases
+      # Each case's first line may be '; show: <mnemonic regex>', naming the
+      # instructions to report (default: clipw). All cases go into one notice,
+      # since GitHub keeps only 10 notices per step.
+      - name: vcl on the cases
         run: |
           mkdir -p out/cases
-          {
-            echo "## CLIPw cases (vcl 1.4beta7)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Cases (vcl 1.4beta7)" >> "$GITHUB_STEP_SUMMARY"
+          lines=""
           for f in cases/*.vcl; do
             n=$(basename "$f" .vcl)
+            pat=$(sed -n '1s/^; *show: *//p' "$f")
+            pat="(^|[[:space:]])(${pat:-clipw})[.[:space:]]"
             set +e
             "$VCL" "$f" > "out/cases/$n.vsm" 2> "out/cases/$n.err"
             rc=$?
             set -e
-            clip=$(grep -i 'clipw' "out/cases/$n.vsm" | sed 's/^[[:space:]]*//' | head -3 || true)
-            err=$(head -5 "out/cases/$n.err" || true)
+            src=$(grep -v '^;' "$f" | grep -i -E "$pat" | sed 's/^[[:space:]]*//' | paste -sd '|' - || true)
+            emitted=$(grep -i -E "$pat" "out/cases/$n.vsm" | sed 's/^[[:space:]]*//; s/[[:space:]][[:space:]]*/ /g' | head -6 | paste -sd '|' - || true)
+            err=$(head -5 "out/cases/$n.err" | paste -sd '|' - || true)
             echo "=== $n: exit $rc"
-            echo "--- source clipw line: $(grep -i clipw "$f")"
+            echo "--- source: $src"
             echo "--- stdout:"; cat "out/cases/$n.vsm"
             echo "--- stderr:"; cat "out/cases/$n.err"
-            msg="exit=$rc; source: $(grep -i clipw "$f" | sed 's/^[[:space:]]*//'); emitted: ${clip:-<none>}; stderr: ${err:-<none>}"
-            printf '%s\n' "- **$n**: $msg" >> "$GITHUB_STEP_SUMMARY"
-            msg="${msg//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
-            echo "::notice title=case $n::$msg"
+            line="$n: exit=$rc; source: $src; emitted: ${emitted:-<none>}; stderr: ${err:-<none>}"
+            printf '%s\n' "- $line" >> "$GITHUB_STEP_SUMMARY"
+            lines="$lines$line"$'\n'
           done
+          msg="${lines//'%'/'%25'}"; msg="${msg//$'\n'/'%0A'}"; msg="${msg//$'\r'/'%0D'}"
+          echo "::notice title=cases::$msg"
 
       - name: Build vclpp (pinned)
         run: |
