@@ -9,9 +9,9 @@
 // Now an iaddi outside -16..15 becomes an isubiu or iaddiu (SCE VCL emits
 // every iaddi that way), an iaddiu/isubiu or flag-mask immediate that does
 // not fit is an error, and a memory offset outside -1024..1023 is a warning
-// (the assembler wraps it, which on VU1 reaches the same address).  The
-// scheduler no longer moves a load or store when that would push its offset
-// out of the field.
+// (the assembler wraps it, which on VU1 reaches the same address), which
+// --warnings-as-errors turns into a failure.  The scheduler no longer moves
+// a load or store when that would push its offset out of the field.
 
 #include "test_harness.h"
 #include "openvcl_runner.h"
@@ -405,4 +405,24 @@ TEST_CASE("openvcl: a store moved into a branch delay slot keeps its offset enco
     CHECK(r.stderr_data.empty());
     CHECK(contains(r.stdout_data, "sq VF02, -1024(VI01)"));
     CHECK(memoryOffsetsFit(r.stdout_data));
+}
+
+TEST_CASE("openvcl: --warnings-as-errors fails the run on a warning")
+{
+    const std::string warned = program("\tlq fA, 1024(vi00)\n\tsq fA, 0(vi00)\n");
+    const std::string clean = program("\tlq fA, 1023(vi00)\n\tsq fA, 0(vi00)\n");
+
+    ::test::RunResult r = compile(warned);
+    CHECK(r.exit_code == 0);
+    CHECK(contains(r.stderr_data, "warning: Offset 1024 is outside -1024..1023"));
+
+    std::vector<std::string> args;
+    args.push_back("--warnings-as-errors");
+    ::test::RunResult strict = ::test::run_openvcl(args, warned);
+    CHECK(strict.exit_code != 0);
+    CHECK(contains(strict.stderr_data, "warning: Offset 1024 is outside -1024..1023"));
+
+    ::test::RunResult strictClean = ::test::run_openvcl(args, clean);
+    CHECK(strictClean.exit_code == 0);
+    CHECK(strictClean.stderr_data.empty());
 }

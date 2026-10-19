@@ -30,6 +30,10 @@ public:
 	static bool HasErrors();
 	static void ResetErrorCount();
 
+	// Count warnings as errors from now on (--warnings-as-errors), so they
+	// fail the run too.
+	static void SetWarningsAsErrors( bool enable );
+
 private:
 
 	enum
@@ -50,6 +54,7 @@ private:
 
 	static std::list<Error> ms_errors;
 	static unsigned int ms_errorCount;
+	static bool ms_warningsAsErrors;
 };
 
 }

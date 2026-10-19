@@ -8,6 +8,7 @@ namespace vcl
 
 std::list<Error> Error::ms_errors;
 unsigned int Error::ms_errorCount = 0;
+bool Error::ms_warningsAsErrors = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -158,10 +159,11 @@ std::string Error::toString() const
 void Error::Display( const Error& e )
 {
 	std::cerr << e.toString() << std::endl;
-	// Track non-warning errors so main() can fail the run with a non-zero
-	// exit code.  Without this, openvcl prints diagnostics and still
-	// reports success, which lets broken VCL silently produce empty .vsm.
-	if( !e.m_warning )
+	// Track non-warning errors (and, with --warnings-as-errors, warnings) so
+	// main() can fail the run with a non-zero exit code.  Without this,
+	// openvcl prints diagnostics and still reports success, which lets
+	// broken VCL silently produce empty .vsm.
+	if( !e.m_warning || ms_warningsAsErrors )
 		++ms_errorCount;
 }
 
@@ -173,6 +175,11 @@ bool Error::HasErrors()
 void Error::ResetErrorCount()
 {
 	ms_errorCount = 0;
+}
+
+void Error::SetWarningsAsErrors( bool enable )
+{
+	ms_warningsAsErrors = enable;
 }
 
 }

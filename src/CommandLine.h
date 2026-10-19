@@ -58,6 +58,7 @@ public:
 	bool knownLoopOptimizations() const;
 	bool genericSoftwarePipelining() const;
 	bool strictScheduleSlots() const;
+	bool warningsAsErrors() const;
 	const std::vector< std::pair<std::string, unsigned int> >& costLoops() const;
 	const std::string& costCompareBaseline() const;
 	const std::string& costCompareListCheckMetric() const;
@@ -134,6 +135,7 @@ private:
 		ENABLE_GENERIC_SOFTWARE_PIPELINING,
 		DISABLE_GENERIC_SOFTWARE_PIPELINING,
 		STRICT_SCHEDULE_SLOTS,
+		WARNINGS_AS_ERRORS,
 
 		IGNORE
 	};
@@ -187,6 +189,7 @@ private:
 	bool m_knownLoopOptimizations;
 	bool m_genericSoftwarePipelining;
 	bool m_strictScheduleSlots;
+	bool m_warningsAsErrors;
 	std::vector< std::pair<std::string, unsigned int> > m_costLoops;
 	std::string m_costCompareBaseline;
 	std::string m_costCompareListCheckMetric;
