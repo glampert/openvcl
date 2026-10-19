@@ -330,6 +330,9 @@ bool Token::processOperand( const Operand* operand, bool newSyntax, Token::Argum
 							{
 								if( 1 != countFields( fields ) )
 									match = false;
+
+								if( hasModifier( WCOMP, modifiers ) && (W != fields) )
+									match = false;
 							}
 							else if( hasModifier( DEST, modifiers ) )
 							{
@@ -367,9 +370,12 @@ bool Token::processOperand( const Operand* operand, bool newSyntax, Token::Argum
 
 						(*i).setFields( fields );
 
-						// if flag hasn't been specified, fail
+						// if flag hasn't been specified, fail (a W component
+						// defaults to W instead)
 
-						if( hasModifier( FLAG, modifiers ) )
+						if( hasModifier( WCOMP, modifiers ) )
+							(*i).setFields( W );
+						else if( hasModifier( FLAG, modifiers ) )
 							match = false;
 
 						if( hasModifier( BROADCAST, modifiers ) && !activeBroadcast )
@@ -547,8 +553,9 @@ unsigned int Token::extractModifiers( const std::string& list )
 		else if( name == "bc" )
 			modifiers |= (1<<BROADCAST);
 		else if( name == "wcomp" )
-			// treat 'wcomp' like a single-component selector requirement
-			modifiers |= (1<<FLAG);
+			// a single-component selector that can only be W, and that
+			// defaults to W when the operand has no field (as SCE VCL does)
+			modifiers |= (1<<FLAG)|(1<<WCOMP);
 		else if( name == "noalias" )
 			modifiers |= (1<<NOALIAS);
 		else if( name == "write" )
