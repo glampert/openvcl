@@ -7,7 +7,6 @@
 --endenter
    lq vA, 0(vi00)
    div q, vf00[w], vA[x]
-   waitq
    mulq.x vB, vA, q
    sq.x vB, 1(vi00)
    fsand vi01, 0x1000
