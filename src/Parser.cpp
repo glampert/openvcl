@@ -2101,6 +2101,12 @@ bool Parser::generateCode()
 
 bool Parser::writeOutput()
 {
+	// write nothing once an error has been reported: a .vsm left behind
+	// would look up to date to make, and the next build would use it
+
+	if( Error::HasErrors() )
+		return false;
+
 	if( m_cmdLine.output() == "-" )
 		return writeOutputStream( std::cout );
 
