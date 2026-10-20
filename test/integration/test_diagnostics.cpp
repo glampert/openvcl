@@ -2,7 +2,8 @@
 //
 // Errors were printed as "file(line) : message", without the "error:" tag
 // warnings already had, so searching a build log for "error:" found
-// nothing.
+// nothing.  Running out of registers said only "Register allocation ran out
+// of registers", with no variable, register type or location.
 
 #include "test_harness.h"
 #include "openvcl_runner.h"
@@ -66,4 +67,35 @@ TEST_CASE("openvcl: an error without a location is tagged error:")
 
     CHECK(r.exit_code != 0);
     CHECK(contains(r.stderr_data, "openvcl: error: Could not open output file"));
+}
+
+TEST_CASE("openvcl: running out of VI registers names the variable and where it is set")
+{
+    // only two VI registers for three values live at once; line 9 sets the third
+    ::test::RunResult r = ::test::run_openvcl(std::vector<std::string>(), program(
+        "\t.init_vf_all\n\t.init_vi vi01, vi02\n",
+        "\tilw.x iA, 0(vi00)\n"
+        "\tilw.x iB, 1(vi00)\n"
+        "\tilw.x iC, 2(vi00)\n"
+        "\tiadd iD, iA, iB\n"
+        "\tiadd iE, iD, iC\n"
+        "\tisw.x iE, 3(vi00)\n"));
+
+    CHECK(r.exit_code != 0);
+    CHECK(contains(r.stderr_data, "(9) : error: Register allocation ran out of VI registers (2 available) for iC (ilw.x >>> iC <<<, 2(vi00))"));
+}
+
+TEST_CASE("openvcl: running out of VF registers names the variable and where it is set")
+{
+    ::test::RunResult r = ::test::run_openvcl(std::vector<std::string>(), program(
+        "\t.init_vf vf01-vf02\n\t.init_vi_all\n",
+        "\tlq fA, 0(vi00)\n"
+        "\tlq fB, 1(vi00)\n"
+        "\tlq fC, 2(vi00)\n"
+        "\tadd fD, fA, fB\n"
+        "\tadd fE, fD, fC\n"
+        "\tsq fE, 3(vi00)\n"));
+
+    CHECK(r.exit_code != 0);
+    CHECK(contains(r.stderr_data, "(9) : error: Register allocation ran out of VF registers (2 available) for fC (lq >>> fC <<<"));
 }

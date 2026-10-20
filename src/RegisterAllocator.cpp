@@ -269,9 +269,10 @@ bool RegisterAllocator::process( std::list<Token>& tokens )
 
 	if( m_aliases.size() > 0 )
 	{
-		if( !processAliases() )
+		Alias* unallocated = NULL;
+		if( !processAliases( unallocated ) )
 		{
-			Error::Display( Error( "Register allocation ran out of registers" ) );
+			reportUnallocatedAlias( tokens, unallocated );
 			return false;
 		}
 	}
@@ -559,7 +560,7 @@ bool RegisterAllocator::collectLabels( std::list<Token>::iterator start, std::li
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool RegisterAllocator::processAliases()
+bool RegisterAllocator::processAliases( Alias*& unallocated )
 {
 	// allocate registers that do not overlap usage
 
@@ -798,12 +799,56 @@ bool RegisterAllocator::processAliases()
 				std::cerr << "Failed to allocate " << (dest->type() == Alias::FLOAT ? "FLOAT" : "INTEGER")
 				          << " register for alias" << std::endl;
 			}
+			unallocated = dest;
 			return false;
 		}
 		//assert( dest->allocatedRegister() );
 	}
 
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void RegisterAllocator::reportUnallocatedAlias( const std::list<Token>& tokens, const Alias* alias ) const
+{
+	if( !alias )
+	{
+		Error::Display( Error( "Register allocation ran out of registers" ) );
+		return;
+	}
+
+	// the registers .init_vf/.init_vi left to the allocator
+
+	const bool isFloat = (alias->type() == Alias::FLOAT);
+	unsigned int available = 0;
+	for( unsigned int i = 0; i < (isFloat ? 32u : 16u); ++i )
+	{
+		if( (isFloat ? m_floats[i] : m_integers[i]).available() )
+			++available;
+	}
+
+	std::stringstream message;
+	message << "Register allocation ran out of " << (isFloat ? "VF" : "VI")
+	        << " registers (" << available << " available)";
+
+	// name the variable, where it first appears
+
+	for( std::list<Token>::const_iterator i = tokens.begin(); i != tokens.end(); ++i )
+	{
+		for( std::list<Token::Argument>::const_iterator a = (*i).arguments().begin(); a != (*i).arguments().end(); ++a )
+		{
+			if( ((*a).content() == Token::Argument::ALIAS) && (*a).dependency()
+			    && ((*a).dependency()->alias() == alias) )
+			{
+				message << " for " << (*a).alias();
+				Error::Display( Error( message.str(), *i, *a ) );
+				return;
+			}
+		}
+	}
+
+	Error::Display( Error( message.str() ) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
