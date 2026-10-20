@@ -2177,7 +2177,9 @@ std::string Parser::tempFilename()
 	{
 		std::stringstream buffer;
 		
-		buffer << "/tmp/vcl" << std::hex << std::setfill('0') << std::setw(8) << ((getpid()+rand()) << 8) + m_tempCounter++;
+		// unsigned, so the sum and the shift wrap instead of overflowing an int
+		buffer << "/tmp/vcl" << std::hex << std::setfill('0') << std::setw(8)
+		       << ((static_cast<unsigned int>(getpid()) + static_cast<unsigned int>(rand())) << 8) + m_tempCounter++;
 		std::string temp = buffer.str();
 
 		std::ofstream file(temp.c_str(),std::ifstream::out);

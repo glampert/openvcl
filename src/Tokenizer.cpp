@@ -24,6 +24,7 @@ Tokenizer::Tokenizer()
 {
 	setVsmMode( false );
 	setComment( false );
+	setNewSyntax( false );
 
 	m_availableFloats = 0;
 	m_availableIntegers = 0;
