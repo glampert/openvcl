@@ -840,6 +840,8 @@ namespace
 			long offset = 0;
 			if( !evaluateIntegerExpression( i->immediate(), offset ) )
 				return false;
+			if( offset + delta < -1024 || offset + delta > 1023 )
+				return false;
 
 			std::stringstream s;
 			s << (offset + delta);

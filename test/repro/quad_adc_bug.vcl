@@ -30,7 +30,7 @@
 
 main_loop_lid:
 	xtop         vi04
-	iaddiu       vi05, vi00, 0xffff
+	iaddiu       vi05, vi00, 0x7fff
 	lq           vf07, 0(vi00)
 	lq           vf08, 1(vi00)
 	lq           vf09, 2(vi00)

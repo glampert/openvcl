@@ -681,8 +681,9 @@ void coalesceAdjacentVuIntegerAdds( std::list<Token>& tokens )
 			continue;
 		}
 
+		// IADDIU's immediate is 15 bits, unsigned
 		const long combined = immediate + nextImmediate;
-		if( combined < -32768 || combined > 32767 || combined == 0 )
+		if( combined <= 0 || combined > 32767 )
 		{
 			++i;
 			continue;

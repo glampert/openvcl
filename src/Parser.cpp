@@ -1159,6 +1159,8 @@ bool Parser::create( int argc, char* argv[] )
 		return false;
 	}
 
+	Error::SetWarningsAsErrors( m_cmdLine.warningsAsErrors() );
+
 	if( m_cmdLine.showVersion() )
 		setState( SHOW_VERSION );
 	else if( m_cmdLine.showUsage() )

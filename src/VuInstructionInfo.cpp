@@ -626,4 +626,53 @@ const char* vuInstructionDescription( const VuInstructionInfo& info )
 	return "VU instruction.";
 }
 
+bool vuInstructionImmediateRange( VuInstructionOpcode opcode, long& minimum, long& maximum )
+{
+	switch( opcode )
+	{
+		// 5 bits, signed
+		case VU_OP_IADDI:
+			minimum = -16;
+			maximum = 15;
+			return true;
+
+		// 15 bits, unsigned
+		case VU_OP_IADDIU:
+		case VU_OP_ISUBIU:
+			minimum = 0;
+			maximum = 0x7fff;
+			return true;
+
+		// 11 bits, signed
+		case VU_OP_LQ:
+		case VU_OP_SQ:
+		case VU_OP_ILW:
+		case VU_OP_ISW:
+			minimum = -1024;
+			maximum = 1023;
+			return true;
+
+		// 24 bits
+		case VU_OP_FCAND:
+		case VU_OP_FCEQ:
+		case VU_OP_FCOR:
+		case VU_OP_FCSET:
+			minimum = 0;
+			maximum = 0xffffff;
+			return true;
+
+		// 12 bits
+		case VU_OP_FSAND:
+		case VU_OP_FSEQ:
+		case VU_OP_FSOR:
+		case VU_OP_FSSET:
+			minimum = 0;
+			maximum = 0xfff;
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 }

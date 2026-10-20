@@ -10,6 +10,7 @@
 
 #include "Tokenizer.h"
 #include "Error.h"
+#include "VuTokenResourceAccess.h"
 #include "stlhelp.h"
 
 #include <iostream>
@@ -372,6 +373,8 @@ bool Tokenizer::handleToken( Token& token )
 		return false;
 	}
 
+	checkImmediate( token );
+
 	// raw VSM mode
 
 	if( vsmMode() )
@@ -520,6 +523,67 @@ bool Tokenizer::handleToken( Token& token )
 	}
 
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Tokenizer::checkImmediate( Token& token )
+{
+	// dvp-as keeps only the low bits of an immediate that doesn't fit its
+	// instruction's field, without a diagnostic. The token is kept either way,
+	// so a bad immediate doesn't cascade into errors about its destination.
+
+	double value;
+	long minimum, maximum;
+	const Token::Argument* immediate = findVuTokenImmediate( token, value, minimum, maximum );
+	if( !immediate || ((value >= minimum) && (value <= maximum)) )
+		return;
+
+	// an iaddi beyond its 5 bits becomes an isubiu or iaddiu (SCE VCL emits
+	// every iaddi that way)
+
+	if( VU_OP_IADDI == vuInstructionOpcodeForMnemonic( token.operand()->name() ) )
+	{
+		minimum = -0x7fff;
+		maximum = 0x7fff;
+
+		if( (value >= minimum) && (value <= maximum) )
+		{
+			const char* name = (value < 0) ? "isubiu" : "iaddiu";
+			for( std::list<Operand>::const_iterator i = m_operands->begin(); i != m_operands->end(); ++i )
+			{
+				if( casecompare( (*i).name(), name ) )
+					continue;
+
+				std::stringstream s;
+				s << static_cast<long>( (value < 0) ? -value : value );
+				token.arguments().back().setImmediate( s.str() );
+				token.setOperand( &(*i) );
+				return;
+			}
+		}
+	}
+
+	std::stringstream message;
+	if( (value > -1e15) && (value < 1e15) )
+		message << static_cast<long long>( value );
+	else
+		message << value;
+	message << " is outside " << minimum << ".." << maximum;
+
+	// an offset only wraps: VU1 data memory is 1024 quadwords and addresses
+	// wrap, so on VU1 the encoded offset reaches the same address
+
+	if( (immediate->flags() & Token::Argument::INDIRECT) && (value > -0x80000000LL) && (value < 0x80000000LL) )
+	{
+		const long long range = maximum - minimum + 1;
+		const long long wrapped = (((static_cast<long long>( value ) - minimum) % range + range) % range) + minimum;
+		message << " and assembles as " << wrapped;
+		Error::Display( Error( "Offset " + message.str(), token, *immediate, true ) );
+		return;
+	}
+
+	Error::Display( Error( "Immediate " + message.str(), token, *immediate ) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

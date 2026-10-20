@@ -76,6 +76,7 @@ protected:
 
 	const Operand* identifyToken( Token& token );
 	bool handleToken( Token& token );
+	void checkImmediate( Token& token );
 
 	void setAvailableFloats( unsigned int floats );
 	void setAvailableIntegers( unsigned int ints );
