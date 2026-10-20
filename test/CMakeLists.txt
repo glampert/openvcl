@@ -79,6 +79,7 @@ set(OPENVCL_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_pairing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_literal_register_conflict.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_flag_latency.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_emit_source.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_continuation_lifetime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_two_address_coalescing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_vsm_cost.cpp

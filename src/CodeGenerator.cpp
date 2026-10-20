@@ -1480,6 +1480,17 @@ void CodeGenerator::addNopLine()
 	m_codeLines.push_back( formatRawPairedInstructionLine( vuInstr(VU_OP_NOP), vuInstr(VU_OP_NOP) ) );
 }
 
+void CodeGenerator::addSourceComment( const Token& token )
+{
+	// with -c, the token's source line goes above the next code line pushed
+	if( !emitSource() )
+		return;
+
+	std::stringstream s;
+	s << " ; Line " << token.line().number() << ": " << token.line().content();
+	m_sourceComments.push_back( std::make_pair( m_codeLines.size(), s.str() ) );
+}
+
 void CodeGenerator::emitWaitQ()
 {
 	const int nextCycle = m_currentCycle + 1;
@@ -1513,6 +1524,7 @@ void CodeGenerator::emitUpperWithWait( const Token& token, bool waitQ )
 
 	const int readyCycle = waitQ ? m_latencyTracker.qReadyCycle() : m_latencyTracker.pReadyCycle();
 	const int issueCycle = (readyCycle > m_currentCycle) ? readyCycle : m_currentCycle;
+	addSourceComment(token);
 	m_codeLines.push_back(outputLine);
 	recordRegisterWrites(token, issueCycle);
 	m_currentCycle = issueCycle + 1;
@@ -1554,14 +1566,6 @@ void CodeGenerator::emitSingleToken( const Token& token )
 	std::string instruction = generateInstruction(token);
 	std::string outputLine = "";
 
-	// emit original sourcecode as a comment
-	if( emitSource() )
-	{
-		std::stringstream s;
-		s << " ; Line " << token.line().number() << ": " << token.line().content();
-		m_codeLines.push_back( s.str() );
-	}
-
 	int instructionLength = 32;
 
 	for(int d = 0; d < 20; d++)
@@ -1596,6 +1600,7 @@ void CodeGenerator::emitSingleToken( const Token& token )
 	if( branchDelaySlots > 0 )
 	{
 		padForBranchPreBubble( token );
+		addSourceComment(token);
 		m_codeLines.push_back(outputLine);
 		m_currentCycle++;
 		for( unsigned int i = 0; i < branchDelaySlots; ++i )
@@ -1607,6 +1612,7 @@ void CodeGenerator::emitSingleToken( const Token& token )
 	else
 	{
 		int issueCycle = m_currentCycle;
+		addSourceComment(token);
 		m_codeLines.push_back(outputLine);
 		m_currentCycle++;
 		recordRegisterWrites(token, issueCycle);
@@ -1621,13 +1627,6 @@ void CodeGenerator::emitBranchWithDelayFiller( const Token& branch, const Token&
 	std::string fillerInstruction = generateInstruction(filler);
 	std::string fillerLine = "";
 	const int instructionLength = 32;
-
-	if( emitSource() )
-	{
-		std::stringstream s;
-		s << " ; Line " << branch.line().number() << ": " << branch.line().content();
-		m_codeLines.push_back( s.str() );
-	}
 
 	for(int d = 0; d < 20; d++)
 		branchLine += " ";
@@ -1653,15 +1652,9 @@ void CodeGenerator::emitBranchWithDelayFiller( const Token& branch, const Token&
 	}
 
 	padForBranchPreBubble( branch );
+	addSourceComment(branch);
 	m_codeLines.push_back(branchLine);
 	m_currentCycle++;
-
-	if( emitSource() )
-	{
-		std::stringstream s;
-		s << " ; Line " << filler.line().number() << ": " << filler.line().content();
-		m_codeLines.push_back( s.str() );
-	}
 
 	for(int d = 0; d < 20; d++)
 		fillerLine += " ";
@@ -1686,6 +1679,7 @@ void CodeGenerator::emitBranchWithDelayFiller( const Token& branch, const Token&
 		}
 	}
 
+	addSourceComment(filler);
 	m_codeLines.push_back(fillerLine);
 	recordRegisterWrites(filler, m_currentCycle);
 	m_currentCycle++;
@@ -1705,6 +1699,8 @@ void CodeGenerator::emitPairedTokens( const Token& a, const Token& b )
 		padForBranchPreBubble(a);
 	if( branchNeedsPreBubble(b) )
 		padForBranchPreBubble(b);
+	addSourceComment( tokenIsLowerExecutionPath(a) ? b : a );
+	addSourceComment( tokenIsLowerExecutionPath(a) ? a : b );
 	m_codeLines.push_back(pairedLine);
 
 	recordRegisterWrites(a, m_currentCycle);
@@ -1728,6 +1724,8 @@ void CodeGenerator::emitPairedBranchWithDelayFiller( const Token& a, const Token
 		padForBranchPreBubble(a);
 	if( branchNeedsPreBubble(b) )
 		padForBranchPreBubble(b);
+	addSourceComment( tokenIsLowerExecutionPath(a) ? b : a );
+	addSourceComment( tokenIsLowerExecutionPath(a) ? a : b );
 	m_codeLines.push_back(pairedLine);
 
 	recordRegisterWrites(a, m_currentCycle);
@@ -1760,6 +1758,7 @@ void CodeGenerator::emitPairedBranchWithDelayFiller( const Token& a, const Token
 		}
 	}
 
+	addSourceComment(filler);
 	m_codeLines.push_back(fillerLine);
 	recordRegisterWrites(filler, m_currentCycle);
 	m_currentCycle++;
@@ -10060,8 +10059,16 @@ std::string CodeGenerator::generateOperand(const Token& token)
 
 bool CodeGenerator::write(std::ostream& stream)
 {
-	for(std::list<std::string>::const_iterator i = m_codeLines.begin(); i != m_codeLines.end(); ++i)
+	std::vector< std::pair<size_t, std::string> >::const_iterator comment = m_sourceComments.begin();
+	size_t index = 0;
+
+	for(std::list<std::string>::const_iterator i = m_codeLines.begin(); i != m_codeLines.end(); ++i, ++index)
+	{
+		for( ; (comment != m_sourceComments.end()) && (comment->first == index); ++comment )
+			stream << comment->second << std::endl;
+
 		stream << (*i) << std::endl;
+	}
 
 	return true;
 }
