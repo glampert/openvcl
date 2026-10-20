@@ -109,8 +109,7 @@ std::string Error::toString() const
 		s << "openvcl: ";
 	}
 
-	if( m_warning )
-		s << "warning: ";
+	s << (m_warning ? "warning: " : "error: ");
 
 	s << m_string;
 

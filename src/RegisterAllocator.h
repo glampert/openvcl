@@ -88,7 +88,8 @@ private:
 
 	bool processCommonDirective( Token& token );
 
-	bool processAliases();
+	bool processAliases( Alias*& unallocated );
+	void reportUnallocatedAlias( const std::list<Token>& tokens, const Alias* alias ) const;
 
 	// Walks all emittable tokens and records, for each physical register,
 	// the line numbers where it appears as a *literal* (non-alias) operand.
