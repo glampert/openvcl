@@ -69,6 +69,7 @@ set(OPENVCL_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/unit/test_vsm_cost_analyzer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/openvcl_runner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_cli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_diagnostics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_init_vf_range.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_clip_validation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/integration/test_clip_implicit_w.cpp
