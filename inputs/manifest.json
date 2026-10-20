@@ -1,0 +1,913 @@
+[
+ {
+  "id": "quake2-ps2__textured_triangles",
+  "flags": [],
+  "sha256": "efba82ce6da260be513cc423b6f40c7aa7af168bf280d6b4878fafc9e9eb2d47",
+  "sources": [
+   {
+    "name": "quake2-ps2/textured_triangles",
+    "repo": "https://github.com/glampert/quake2-ps2",
+    "commit": "12f2f9a83ea431267f1313a320518736bd3777aa",
+    "path": "src/ps2/renderer/vu1progs/textured_triangles.vcl",
+    "via": "vclpp -I src/ps2/renderer/vu1progs -Wundef -Werror -j"
+   },
+   {
+    "name": "quake-ps2/textured_triangles",
+    "repo": "https://github.com/glampert/quake-ps2",
+    "commit": "ac62ce964123eee2b750f026c10de0d92d7031ac",
+    "path": "src/ps2/renderer/vu1progs/textured_triangles.vcl",
+    "via": "vclpp -I src/ps2/renderer/vu1progs -Wundef -Werror -j"
+   }
+  ]
+ },
+ {
+  "id": "quake2-ps2__particles",
+  "flags": [],
+  "sha256": "0a53fee21e5677625b7b7731e88b290258aa90b0a7d6652c6f24440d0cb33b5c",
+  "sources": [
+   {
+    "name": "quake2-ps2/particles",
+    "repo": "https://github.com/glampert/quake2-ps2",
+    "commit": "12f2f9a83ea431267f1313a320518736bd3777aa",
+    "path": "src/ps2/renderer/vu1progs/particles.vcl",
+    "via": "vclpp -I src/ps2/renderer/vu1progs -Wundef -Werror -j"
+   },
+   {
+    "name": "quake-ps2/particles",
+    "repo": "https://github.com/glampert/quake-ps2",
+    "commit": "ac62ce964123eee2b750f026c10de0d92d7031ac",
+    "path": "src/ps2/renderer/vu1progs/particles.vcl",
+    "via": "vclpp -I src/ps2/renderer/vu1progs -Wundef -Werror -j"
+   }
+  ]
+ },
+ {
+  "id": "tyra__dynpip_c_vu1",
+  "flags": [],
+  "sha256": "ee89110d687dc7afeb0482bdfb9e25571f65dc71b9ac208854375aa5c9978c11",
+  "sources": [
+   {
+    "name": "tyra/dynpip_c_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/dynamic/core/programs/dynpip_c_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__dynpip_d_vu1",
+  "flags": [],
+  "sha256": "aa9059bd426041cf18fcd00e2b912b76361d35d447061820706d499ed224c303",
+  "sources": [
+   {
+    "name": "tyra/dynpip_d_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/dynamic/core/programs/dynpip_d_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__dynpip_tc_vu1",
+  "flags": [],
+  "sha256": "a472a241eceb5ebef95763ec565e513187d6965f44e829aafc3a2682deb15336",
+  "sources": [
+   {
+    "name": "tyra/dynpip_tc_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/dynamic/core/programs/dynpip_tc_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__dynpip_td_vu1",
+  "flags": [],
+  "sha256": "fe922b3dc8ca148289635f15484b51d039e85127c924fa1f5a082eb6f82a8a96",
+  "sources": [
+   {
+    "name": "tyra/dynpip_td_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/dynamic/core/programs/dynpip_td_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__mcpip_as_is_vu1",
+  "flags": [],
+  "sha256": "fe34658a5f6e11d84b36ba88eb4b885cf015c77cf57dfe1f4a656c92af828e5f",
+  "sources": [
+   {
+    "name": "tyra/mcpip_as_is_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/minecraft/programs/as_is/mcpip_as_is_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__mcpip_cull_vu1",
+  "flags": [],
+  "sha256": "906889f76492777900d8762dab8630250d3c45ba6039ef10b4b6b341ff4795a2",
+  "sources": [
+   {
+    "name": "tyra/mcpip_cull_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/minecraft/programs/cull/mcpip_cull_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_as_is_c_vu1",
+  "flags": [],
+  "sha256": "14d34223f8567f55501a997adfd77d673b43ff4477465664b6a31146871c64a7",
+  "sources": [
+   {
+    "name": "tyra/stapip_as_is_c_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/as_is/stapip_as_is_c_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_as_is_d_vu1",
+  "flags": [],
+  "sha256": "63cee4f63e069778840c36a05661fdd4e68598744d248448dde027a8c62465d0",
+  "sources": [
+   {
+    "name": "tyra/stapip_as_is_d_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/as_is/stapip_as_is_d_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_as_is_tc_vu1",
+  "flags": [],
+  "sha256": "b1f5a2ce82ceefc3f6c12da0598451cb6c394384eb8a376e81288640bc671338",
+  "sources": [
+   {
+    "name": "tyra/stapip_as_is_tc_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/as_is/stapip_as_is_tc_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_as_is_td_vu1",
+  "flags": [],
+  "sha256": "90c7c528aea665db9be1288c47e7cbe9af4f31aced684cac089df18730b1c70f",
+  "sources": [
+   {
+    "name": "tyra/stapip_as_is_td_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/as_is/stapip_as_is_td_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_cull_c_vu1",
+  "flags": [],
+  "sha256": "35fe77c28958814e8dd3e67aaef9af374c0e9dcf9eb83758c4bb283850e8e4d2",
+  "sources": [
+   {
+    "name": "tyra/stapip_cull_c_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/cull/stapip_cull_c_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_cull_d_vu1",
+  "flags": [],
+  "sha256": "60f75479cf74cb125c887db81c0310989b47faf86325c216361fafdbfb09ee6c",
+  "sources": [
+   {
+    "name": "tyra/stapip_cull_d_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/cull/stapip_cull_d_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_cull_tc_vu1",
+  "flags": [],
+  "sha256": "05cd1d333d050d04a45d74bb4f6c193f9971b8fb10e7b6081b6d05773a6107d2",
+  "sources": [
+   {
+    "name": "tyra/stapip_cull_tc_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/cull/stapip_cull_tc_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__stapip_cull_td_vu1",
+  "flags": [],
+  "sha256": "e5263e782402a586e5d3b7e00401eed1895245825baf2f793b6f83047ca85bde",
+  "sources": [
+   {
+    "name": "tyra/stapip_cull_td_vu1",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/3d/pipeline/static/core/programs/cull/stapip_cull_td_vu1.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "tyra__draw_finish",
+  "flags": [],
+  "sha256": "6154e0244a34c159780f3c23583c801f494ed46684cde962680a46f64ddde392",
+  "sources": [
+   {
+    "name": "tyra/draw_finish",
+    "repo": "https://github.com/h4570/tyra",
+    "commit": "c59f406af134713b62656114846ac8d588c6247c",
+    "path": "engine/src/renderer/core/paths/path1/draw_finish.vclpp",
+    "via": "vclpp, run from engine/"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-extra__scei",
+  "flags": [],
+  "sha256": "ca0c842ec6f403e5e57a04d20753c354a257cc9f141351fd5ec8b72160fb745b",
+  "sources": [
+   {
+    "name": "ps2gl-extra/scei",
+    "repo": "https://github.com/glampert/ps2gl",
+    "commit": "794bedc3923a6853a2e7cbebdb7622dd309dc474",
+    "path": "vu1/scei.vcl",
+    "via": "vclpp -m -x -f -I vu1 -I include"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-extra__billboard_renderer",
+  "flags": [],
+  "sha256": "b6fd3f1c24d2c94f8d4de36aeb0c4233ec7e4b8da351782bf14d12f6b567231f",
+  "sources": [
+   {
+    "name": "ps2gl-extra/billboard_renderer",
+    "repo": "https://github.com/glampert/ps2gl",
+    "commit": "794bedc3923a6853a2e7cbebdb7622dd309dc474",
+    "path": "examples/tricked_out/billboard_renderer.vcl",
+    "via": "vclpp -m -x -f -I examples/tricked_out -I vu1 -I include"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__fast",
+  "flags": [],
+  "sha256": "997b4d2557cf2ec02c7443db532b45d56eba92dc07d56bcb1b008469969302ba",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/fast",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/fast.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/fast",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "fast.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_fast",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/fast.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__fast_nolights",
+  "flags": [],
+  "sha256": "824325b3e6b1ba7c4a8914a9913c949a91c5b0e1528cfb9e8617aa4b44c13f65",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/fast_nolights",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/fast_nolights.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/fast_nolights",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "fast_nolights.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_fast_nolights",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/fast_nolights.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general",
+  "flags": [],
+  "sha256": "4e676dfbebb6ed90222f35dff25d0dee1bf648f29719f497053b388910d5dc23",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_nospec",
+  "flags": [],
+  "sha256": "1af31e8a923e38cf21228fe443f9847b6ba72c8fa0641328edbb57197cd4fa28",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_nospec",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_nospec.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_nospec",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_nospec.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_nospec",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_nospec.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_nospec_quad",
+  "flags": [],
+  "sha256": "7d656281c5db68b6357d7fd08ccdf75536234427e64e3a912db91f4eb7cd652c",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_nospec_quad",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_nospec_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_nospec_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_nospec_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_nospec_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_nospec_quad.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_nospec_tri",
+  "flags": [],
+  "sha256": "91707fc3635e114dc98842085965a69a82b1b429f400a5870ceb31934f45ff0f",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_nospec_tri",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_nospec_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_nospec_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_nospec_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_nospec_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_nospec_tri.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_pv_diff",
+  "flags": [],
+  "sha256": "b461424ab55c8c838f56fc36c4c47d7e638770191c03435ccd14848d15c61ffd",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_pv_diff",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_pv_diff.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_pv_diff",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_pv_diff.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_pv_diff",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_pv_diff.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_pv_diff_quad",
+  "flags": [],
+  "sha256": "99d82390f5e3d56549bdc85790bdc791ed9dc2ac87926b97e908bc95e6d1f504",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_pv_diff_quad",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_pv_diff_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_pv_diff_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_pv_diff_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_pv_diff_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_pv_diff_quad.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_pv_diff_tri",
+  "flags": [],
+  "sha256": "451126b723d746fe44b29e286d5041c70c801626d489f1af01e234f6d17ec64e",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_pv_diff_tri",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_pv_diff_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_pv_diff_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_pv_diff_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_pv_diff_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_pv_diff_tri.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_quad",
+  "flags": [],
+  "sha256": "bfc74b2e0c1fac9ef4be6faa86e882682675cadafd7aab43889fa98ed0382c71",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_quad",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_quad.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_quad",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_quad.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__general_tri",
+  "flags": [],
+  "sha256": "c7a58bb7bbc511f17d222ff8a723e0ca567873c6aa27e5371a332e18ea880b0a",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/general_tri",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/general_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/general_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "general_tri.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_general_tri",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/general_tri.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "ps2gl-fixtures__indexed",
+  "flags": [],
+  "sha256": "afa644f114b298a974700b0c7748a1e6a1f7d3752f7a9ad7a3e3d1aa3e70c160",
+  "sources": [
+   {
+    "name": "ps2gl-fixtures/indexed",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/fixtures/indexed.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/indexed",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "indexed.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_fixtures_indexed",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/fixtures/indexed.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repo__test_repro_quad_adc_bug",
+  "flags": [],
+  "sha256": "d1bf9ddd5743524af466f371edefaa652fb048cb7f2a82d3a4bf7f7087494383",
+  "sources": [
+   {
+    "name": "repo/test_repro_quad_adc_bug",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "test/repro/quad_adc_bug.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "examples__sprite",
+  "flags": [],
+  "sha256": "c6eadcbc7a416f4616bb6f1bca272ad1f58961bf1636510f3027b5695c096fa7",
+  "sources": [
+   {
+    "name": "examples/sprite",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "examples/sprite/vu1Sprite.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/examples_sprite_vu1Sprite",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "examples/sprite/vu1Sprite.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/examples_sprite_vu1Sprite",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "examples/sprite/vu1Sprite.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "examples__triangle",
+  "flags": [],
+  "sha256": "74a2ceece5732108d29a3d918d542fa7313c300bfe28b2f11e9e92f6ce4d6fab",
+  "sources": [
+   {
+    "name": "examples/triangle",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "examples/triangle/vu1Triangle.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/examples_triangle_vu1Triangle",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "examples/triangle/vu1Triangle.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/examples_triangle_vu1Triangle",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "examples/triangle/vu1Triangle.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "examples__triangle-gasp",
+  "flags": [
+   "-g",
+   "--gasp",
+   "$MASP"
+  ],
+  "sha256": "bbe011e4a7330da847b81c80abec0b5d7bac46024e8280fb4e0c34923b278736",
+  "sources": [
+   {
+    "name": "examples/triangle-gasp",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "examples/triangle-gasp/vu1Triangle.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/examples_triangle-gasp_vu1Triangle",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "examples/triangle-gasp/vu1Triangle.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/examples_triangle-gasp_vu1Triangle",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "examples/triangle-gasp/vu1Triangle.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "examples__triangle_strip",
+  "flags": [],
+  "sha256": "4c3c8701161cfe55822fed5e3e69275c41a9779daf1b341c09a370454dfa4b16",
+  "sources": [
+   {
+    "name": "examples/triangle_strip",
+    "repo": "https://github.com/glampert/openvcl",
+    "commit": "6f8607ba75c9ef7d86e30123b5ec1e83c1a8e8c1",
+    "path": "examples/triangle_strip/vu1TriangleStrip.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-master/examples_triangle_strip_vu1TriangleStrip",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "examples/triangle_strip/vu1TriangleStrip.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/examples_triangle_strip_vu1TriangleStrip",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "examples/triangle_strip/vu1TriangleStrip.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "fjtrujy-master__test_repro_quad_adc_bug",
+  "flags": [],
+  "sha256": "02c3d383526a2249c31564d7f6e1e3d14946b5669ac4b48a37d7974c6e8019e4",
+  "sources": [
+   {
+    "name": "fjtrujy-master/test_repro_quad_adc_bug",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "aa5e59450b0bb1515a3304d2c3f7cb5558d00347",
+    "path": "test/repro/quad_adc_bug.vcl",
+    "via": "copy"
+   },
+   {
+    "name": "fjtrujy-ps2gl/test_repro_quad_adc_bug",
+    "repo": "https://github.com/fjtrujy/openvcl",
+    "commit": "3e6ac4fabd8729bcdfda56e04212ec311b7c1aed",
+    "path": "test/repro/quad_adc_bug.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__clip_join",
+  "flags": [],
+  "sha256": "a86a3d4511cf502386083adf579edb08ce4940740453c0f41ebf2f0de736d77f",
+  "sources": [
+   {
+    "name": "repro/clip_join",
+    "path": "repros/clip_join.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__clip_loop_entry",
+  "flags": [],
+  "sha256": "2b8424d9e59fb54120f7b4ddd5dc297e42760b3940bf4364ad48bf9c2ac59068",
+  "sources": [
+   {
+    "name": "repro/clip_loop_entry",
+    "path": "repros/clip_loop_entry.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__clipw_implicit_w",
+  "flags": [],
+  "sha256": "01bd8ea91642c0cd7eedeff375a6505103feb3aac7557ba7f8e0f93345e9f977",
+  "sources": [
+   {
+    "name": "repro/clipw_implicit_w",
+    "path": "repros/clipw_implicit_w.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__crossloop_4regs",
+  "flags": [],
+  "sha256": "6666e4081eb7b0b3ceb59c6de68712cd111b16bda2c8005eeebcd55e83b7d891",
+  "sources": [
+   {
+    "name": "repro/crossloop_4regs",
+    "path": "repros/crossloop_4regs.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__ilw_branch_label",
+  "flags": [],
+  "sha256": "c44c9c99b51ba940846bf5599dee20708745022c264ca8d391800b7aff74dbce",
+  "sources": [
+   {
+    "name": "repro/ilw_branch_label",
+    "path": "repros/ilw_branch_label.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__immediates_out_of_range",
+  "flags": [],
+  "sha256": "c514ee515bd17195eb429319290d4eda4313b2af75c7b89097a0e196b3a51265",
+  "sources": [
+   {
+    "name": "repro/immediates_out_of_range",
+    "path": "repros/immediates_out_of_range.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__loop_pointer",
+  "flags": [],
+  "sha256": "e4c7448190458f66509e172c4e59dc469b9fdfdc1761d49df11e3ae632a89433",
+  "sources": [
+   {
+    "name": "repro/loop_pointer",
+    "path": "repros/loop_pointer.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__mac_join",
+  "flags": [],
+  "sha256": "973661c05987052f0bcb7816458a7c99aa89820d72cb0cf6c03a2e8e0b230d0e",
+  "sources": [
+   {
+    "name": "repro/mac_join",
+    "path": "repros/mac_join.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__masked_write_branch",
+  "flags": [],
+  "sha256": "ab475f6ab58ad6a444317b10fbbdb0173ae618001e7149d0e296b4ee1f692923",
+  "sources": [
+   {
+    "name": "repro/masked_write_branch",
+    "path": "repros/masked_write_branch.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__seed_store_order",
+  "flags": [],
+  "sha256": "f9f7f3f0eef1e99a3ea741a235bcf54912a7989b6e4d39464d8dddd60df76784",
+  "sources": [
+   {
+    "name": "repro/seed_store_order",
+    "path": "repros/seed_store_order.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__store_load_alias",
+  "flags": [],
+  "sha256": "35541482ecd1052f0034dc45fb49102753d3bf437e286db54c2e7980baaa97f5",
+  "sources": [
+   {
+    "name": "repro/store_load_alias",
+    "path": "repros/store_load_alias.vcl",
+    "via": "copy"
+   }
+  ]
+ },
+ {
+  "id": "repro__store_store_alias",
+  "flags": [],
+  "sha256": "02b0c3751a5c9d3b8557692f7cf51689dc0c5d5ddd3da55ab82bca68bbf5ecab",
+  "sources": [
+   {
+    "name": "repro/store_store_alias",
+    "path": "repros/store_store_alias.vcl",
+    "via": "copy"
+   }
+  ]
+ }
+]
