@@ -68,6 +68,7 @@ private:
 	std::string accumulatorArg( const Token::Argument& arg, const Token& token );
 
 	void addNopLine();
+	void addSourceComment( const Token& token );
 	void emitWaitQ();
 	void emitWaitP();
 	void emitUpperWithWait( const Token& token, bool waitQ );
@@ -190,6 +191,11 @@ private:
 	std::string formatPairedLine( const Token& upper, const Token& lower );
 
 	std::list<std::string> m_codeLines;
+
+	// -c source comments, each with the index of the m_codeLines entry it
+	// precedes. They stay out of m_codeLines so code generation, which looks
+	// back at the lines already emitted, never sees them.
+	std::vector< std::pair<size_t, std::string> > m_sourceComments;
 
 	bool m_emitSource;
 	bool m_knownLoopOptimizations;
