@@ -43,3 +43,44 @@ jobs:
         path: |
           openvcl
           examples/**/*.elf
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Compile OpenVCL with ASan and UBSan
+      run: |
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_EXAMPLES=OFF -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+        cmake --build build -j $(getconf _NPROCESSORS_ONLN)
+
+    # Reports go to files, and any report fails the job: the integration tests
+    # run openvcl as a child process, and a test that expects it to fail would
+    # pass over a report on its stderr. openvcl does not free its register
+    # allocation data before it exits, so leaks are not checked. No test
+    # compiles the ps2gl programs in test/fixtures, so they are compiled here,
+    # all at once: with the sanitizers the slowest takes over a minute.
+    - name: Run OpenVCL tests and compile the fixtures
+      env:
+        ASAN_OPTIONS: detect_leaks=0:log_path=${{ runner.temp }}/sanitizers/report
+        UBSAN_OPTIONS: print_stacktrace=1:log_path=${{ runner.temp }}/sanitizers/report
+      run: |
+        mkdir -p "$RUNNER_TEMP/sanitizers"
+        status=0
+        ctest --test-dir build --output-on-failure || status=1
+        for fixture in test/fixtures/*.vcl; do
+          ( ./openvcl -o "$RUNNER_TEMP/$(basename "$fixture").vsm" "$fixture" ||
+            echo "openvcl failed on $fixture" >> "$RUNNER_TEMP/failed" ) &
+        done
+        wait
+        if [ -f "$RUNNER_TEMP/failed" ]; then
+          cat "$RUNNER_TEMP/failed"
+          status=1
+        fi
+        for report in "$RUNNER_TEMP"/sanitizers/report.*; do
+          if [ -f "$report" ]; then
+            cat "$report"
+            status=1
+          fi
+        done
+        exit $status
