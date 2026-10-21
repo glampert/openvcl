@@ -86,6 +86,14 @@ private:
 	bool collectLabels( std::list<Token>::iterator start, std::list<Token>::iterator end );
 	bool processBranchState( BranchState* state, std::list<Token>::iterator end );
 
+	// processBranchState stops a path at a branch the path has already taken,
+	// so a loop's second trip is never walked past its first inner branch, and
+	// a value carried around the loop can lose its register there. This walks
+	// the block's control flow back from every read to the writes that reach
+	// it, and joins them into one alias live in between, as a complete walk
+	// would have.
+	bool completeLiveRanges( std::list<Token>::iterator begin, std::list<Token>::iterator end, BranchState* entry );
+
 	bool processCommonDirective( Token& token );
 
 	bool processAliases( Alias*& unallocated );
