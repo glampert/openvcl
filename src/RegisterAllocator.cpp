@@ -476,13 +476,17 @@ bool RegisterAllocator::processBranchState( BranchState* state, std::list<Token>
 
 			std::list<Token>::iterator target;
 
+			// the path runs up to the token after the branch, or to the branch
+			// itself when it ends the program
+			Token& after = (curr != end) ? *curr : token;
+
 			if( token.operand()->flags() & Operand::DYNAMIC )
 			{
 				if( !state->address( *branchDest, target, m_labels ) )
 					continue;
 
 				unsigned int targetLine = (*target).lineNumber();
-				unsigned int currentLine = (*curr).lineNumber();
+				unsigned int currentLine = after.lineNumber();
 				bool isBackwardBranch = targetLine < currentLine;
 
 				if( state->isBranchTaken( &*target ) )
@@ -509,7 +513,7 @@ bool RegisterAllocator::processBranchState( BranchState* state, std::list<Token>
 				BranchState* newState = new BranchState( *state );
 				assert( newState );
 
-				newState->pushTraces( &*curr, false );
+				newState->pushTraces( &after, false );
 				newState->pushTraces( &*target, true );
 				newState->setCurrent( target );
 
@@ -524,7 +528,7 @@ bool RegisterAllocator::processBranchState( BranchState* state, std::list<Token>
 				{
 					// Backward branch (loop back-edge) - extend live ranges to cover loop body
 					unsigned int targetLine = (*target).lineNumber();
-					unsigned int currentLine = (*curr).lineNumber();
+					unsigned int currentLine = after.lineNumber();
 					if( targetLine < currentLine )
 						state->extendLiveRanges( targetLine, currentLine );
 					break;
@@ -532,7 +536,7 @@ bool RegisterAllocator::processBranchState( BranchState* state, std::list<Token>
 
 				state->storeBranch( &*target );
 
-				state->pushTraces( &*curr, false );
+				state->pushTraces( &after, false );
 				state->pushTraces( &*target, true );
 
 				curr = target;
