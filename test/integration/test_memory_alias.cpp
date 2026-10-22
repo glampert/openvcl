@@ -137,6 +137,75 @@ namespace
         "\t--exit\n"
         "\t--endexit\n";
 
+    // iNext is iWalk + 4: the load reads four quadwords past the store.
+    const char* kStoreThenLoadDerivedApart =
+        "\t.init_vf_all\n"
+        "\t.init_vi_all\n"
+        "\t.syntax new\n"
+        "\t.name vsmMemoryAlias\n"
+        "\t--enter\n"
+        "\t--endenter\n"
+        "\tiaddiu iWalk, vi00, 900\n"
+        "\tiaddiu iNext, iWalk, 4\n"
+        "\tlq fA, 1(vi00)\n"
+        "\tlq fB, 2(vi00)\n"
+        "\tmul fC, fA, fB\n"
+        "\tsq fC, 1(iWalk)\n"
+        "\tlq fD, 0(iNext)\n"
+        "\tsq fD, 5(vi00)\n"
+        "\t--exit\n"
+        "\t--endexit\n";
+
+    // iNext is iWalk + 1: the load reads the quadword the store writes.
+    const char* kStoreThenLoadDerivedSame =
+        "\t.init_vf_all\n"
+        "\t.init_vi_all\n"
+        "\t.syntax new\n"
+        "\t.name vsmMemoryAlias\n"
+        "\t--enter\n"
+        "\t--endenter\n"
+        "\tiaddiu iWalk, vi00, 900\n"
+        "\tiaddiu iNext, iWalk, 1\n"
+        "\tlq fA, 1(vi00)\n"
+        "\tlq fB, 2(vi00)\n"
+        "\tmul fC, fA, fB\n"
+        "\tsq fC, 1(iWalk)\n"
+        "\tlq fD, 0(iNext)\n"
+        "\tsq fD, 5(vi00)\n"
+        "\t--exit\n"
+        "\t--endexit\n";
+
+    // The loop below, loading four quadwords ahead of the store: what the
+    // next iteration loads is three past what this one stores.
+    const char* kHoistedLoadApart =
+        "\t.init_vf_all\n"
+        "\t.init_vi_all\n"
+        "\t.syntax new\n"
+        "\t.name vsmMemoryAlias\n"
+        "\t--enter\n"
+        "\t--endenter\n"
+        "\tiaddiu vi01, vi00, 0\n"
+        "\tiaddiu vi02, vi00, 4\n"
+        "\tiaddiu vi03, vi00, 32\n"
+        "\tlq.xyz vf21, 64(vi00)\n"
+        "loop_lid:\n"
+        "\t--LoopCS 1,1\n"
+        "\tlq.xyz vf20, 4(vi03)\n"
+        "\tdiv q, vf20[x], vf21[x]\n"
+        "\tmulq.xyz vf02, vf20, q\n"
+        "\tadd.xyz vf10, vf20, vf00\n"
+        "\tadd.xyz vf11, vf20, vf00\n"
+        "\tdiv q, vf10[x], vf21[x]\n"
+        "\tadd.xyz vf12, vf20, vf00\n"
+        "\tadd.xyz vf13, vf20, vf00\n"
+        "\tmulq.xyz vf05, vf20, q\n"
+        "\tsq.xyz vf05, 0(vi03)\n"
+        "\tiaddiu vi03, vi03, 1\n"
+        "\tiaddiu vi01, vi01, 1\n"
+        "\tibne vi01, vi02, loop_lid\n"
+        "\t--exit\n"
+        "\t--endexit\n";
+
     ::test::RunResult compile(const char* source)
     {
         return ::test::run_openvcl(std::vector<std::string>(), source);
@@ -242,4 +311,41 @@ TEST_CASE("openvcl: a loop whose first load reads the previous iteration's store
     const std::vector<std::string> code = instructions(result.stdout_data);
     CHECK(position(code, "lq.xyz", ", 0(VI04)") >= 0);
     CHECK(position(code, "sq.xyz", ", 0(VI03)") >= 0);
+}
+
+TEST_CASE("openvcl: a load through a register a constant away from the store's moves ahead")
+{
+    ::test::RunResult result = compile(kStoreThenLoadDerivedApart);
+    REQUIRE(result.exit_code == 0);
+
+    const std::vector<std::string> code = instructions(result.stdout_data);
+    const int store = position(code, "sq", ", 1(VI01)");
+    const int load = position(code, "lq", ", 0(VI02)");
+    REQUIRE(store >= 0);
+    REQUIRE(load >= 0);
+    CHECK(load < store);
+}
+
+TEST_CASE("openvcl: a load through a register that reaches the store's address stays behind it")
+{
+    ::test::RunResult result = compile(kStoreThenLoadDerivedSame);
+    REQUIRE(result.exit_code == 0);
+
+    const std::vector<std::string> code = instructions(result.stdout_data);
+    const int store = position(code, "sq", ", 1(VI01)");
+    const int load = position(code, "lq", ", 0(VI02)");
+    REQUIRE(store >= 0);
+    REQUIRE(load >= 0);
+    CHECK(store < load);
+}
+
+TEST_CASE("openvcl: a loop whose first load is a known distance from the previous iteration's store is pipelined")
+{
+    ::test::RunResult result = compile(kHoistedLoadApart);
+    REQUIRE(result.exit_code == 0);
+
+    CHECK(result.stdout_data.find("loop_lid__PROLOG:") != std::string::npos);
+    const std::vector<std::string> code = instructions(result.stdout_data);
+    // The load hoisted into the previous iteration, one step ahead.
+    CHECK(position(code, "lq.xyz", ", 5(VI03)") >= 0);
 }
