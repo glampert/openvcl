@@ -3006,9 +3006,8 @@ namespace
 		}
 	}
 
-	bool tokenIndicesLoadFromMemoryBase( const std::vector<unsigned int>& tokenIndices,
-	                                     const std::vector<const Token*>& indexedTokens,
-	                                     const std::string& memoryBaseRegister )
+	bool tokenIndicesLoadMemory( const std::vector<unsigned int>& tokenIndices,
+	                             const std::vector<const Token*>& indexedTokens )
 	{
 		for( std::vector<unsigned int>::const_iterator i = tokenIndices.begin();
 		     i != tokenIndices.end(); ++i )
@@ -3018,9 +3017,7 @@ namespace
 			VuTokenResourceAccess access;
 			if( !buildVuTokenResourceAccess( *indexedTokens[*i], access ) )
 				continue;
-			if( access.memoryKind == VU_MEMORY_LOAD
-			    && access.hasMemoryBase
-			    && access.memoryBaseRegister == memoryBaseRegister )
+			if( access.memoryKind == VU_MEMORY_LOAD )
 				return true;
 		}
 		return false;
@@ -3032,12 +3029,15 @@ namespace
 	{
 		if( !store.hasMemoryBase )
 			return true;
-		return tokenIndicesLoadFromMemoryBase( opportunity.multiQMainTokenIndices,
-		                                       indexedTokens,
-		                                       store.memoryBaseRegister )
-		    || tokenIndicesLoadFromMemoryBase( opportunity.multiQCyclicPrefixTokenIndices,
-		                                       indexedTokens,
-		                                       store.memoryBaseRegister );
+
+		// A delayed store runs at the top of the next iteration: after the
+		// loads hoisted into this one, and before the rest of that iteration's
+		// loads in program order only.  A different base register is no proof
+		// that a load reads elsewhere, it may hold the store's address by then;
+		// and the same base has moved on by the loop's step, so distinct
+		// offsets are no proof either.
+		return tokenIndicesLoadMemory( opportunity.multiQMainTokenIndices, indexedTokens )
+		    || tokenIndicesLoadMemory( opportunity.multiQCyclicPrefixTokenIndices, indexedTokens );
 	}
 
 	bool loadedMultiQDrainLeavesPartialStoreStream(

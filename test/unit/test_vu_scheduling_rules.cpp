@@ -109,6 +109,11 @@ TEST_CASE("VuSchedulingRules: movement uses descriptors for memory and implicit 
     CHECK(!vcl::vuTokenCanMoveBefore(program.token(2), program.token(1)));
     CHECK(!vcl::vuTokenCanMoveBefore(program.token(4), program.token(3)));
     CHECK(!vcl::vuTokenRangeCanBeCrossed(program.token(1), program.token(0)));
+
+    ParsedProgram aliasingBases;
+    REQUIRE(aliasingBases.parse("sq.xy vf01, 0(vi01)"));
+    REQUIRE(aliasingBases.parse("lq.xy vf02, 0(vi02)"));
+    CHECK(!vcl::vuTokenCanMoveBefore(aliasingBases.token(1), aliasingBases.token(0)));
 }
 
 TEST_CASE("VuSchedulingRules: movement can ignore dead implicit WAW hazards only")
