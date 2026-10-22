@@ -69,6 +69,7 @@ private:
 
 	void addNopLine();
 	void addSourceComment( const Token& token );
+	void addLabelLine( const std::string& label );
 	void emitWaitQ();
 	void emitWaitP();
 	void emitUpperWithWait( const Token& token, bool waitQ );
@@ -78,12 +79,13 @@ private:
 	void emitBranchWithDelayFiller( const Token& branch, const Token& filler );
 	void emitPairedTokens( const Token& a, const Token& b );
 	void emitPairedBranchWithDelayFiller( const Token& a, const Token& b, const Token& filler );
-	bool emitStrictScheduledProgram( const std::list<Token>& tokens, bool& exitWritten );
+	bool emitStrictScheduledProgram( const std::list<Token>& tokens, const VuScheduledProgram& program, bool& exitWritten );
 	void emitStrictScheduledPadding( const VuScheduledIssueSlot& slot );
 	bool prepareStrictScheduledToken( const Token& token, bool& exitWritten, bool allowBranchDelayFiller );
 	int readHazardDelay( const Token& token, const Token* partner ) const;
 	void padForReadHazards( const Token& token, const Token* partner );
 	void recordRegisterWrites( const Token& token, int issueCycle );
+	void recordBranchTargetState( const Token& branch );
 	unsigned int ignoredImplicitWawResourcesForRemaining( std::list<Token>::const_iterator begin,
 	                                                       std::list<Token>::const_iterator end ) const;
 	void fillPreIncrementStoreBranchDelaySlots( std::list<Token>& tokens ) const;
@@ -207,6 +209,14 @@ private:
 
 	int m_currentCycle;
 	VuLatencyTracker m_latencyTracker;
+
+	// What the code at each label inherits from the branches to it: the
+	// latencies still pending when the branch is taken, relative to the cycle
+	// the target's first instruction issues, as the most any of them leaves.
+	// The program is emitted again with these merged in at the labels, until
+	// they stop growing.
+	std::map<std::string, VuLatencyTracker> m_branchTargetStates;
+	bool m_branchTargetStatesGrew;
 
 	// 9.G-1h-4a-2: out-of-band MAIN-body ranges produced by the
 	// generic kernel rewrite. Populated when OPENVCL_USE_GENERIC_KERNEL_REWRITE
