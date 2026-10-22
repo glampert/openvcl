@@ -470,6 +470,38 @@ namespace
             "\t--endexit\n";
     }
 
+    std::string genericLoadedMultiQUnknownBaseSource()
+    {
+        return
+            "\t.init_vf_all\n"
+            "\t.init_vi_all\n"
+            "\t--enter\n"
+            "\t--endenter\n"
+            "\tiaddiu vi01, vi00, 0\n"
+            "\tiaddiu vi02, vi00, 3\n"
+            "\tiaddiu vi03, vi00, 0\n"
+            "\tilw.x vi04, 1(vi00)\n"
+            "loop_lid:\n"
+            "\t--LoopCS 1,1\n"
+            "\tdiv q, vf00w, vf00w\n"
+            "\tmulq.xyz vf02, vf00, q\n"
+            "\tadd.xyz vf10, vf00, vf00\n"
+            "\tadd.xyz vf11, vf00, vf00\n"
+            "\tdiv q, vf00w, vf00w\n"
+            "\tadd.xyz vf12, vf00, vf00\n"
+            "\tadd.xyz vf13, vf00, vf00\n"
+            "\tmulq.xyz vf05, vf00, q\n"
+            "\tsq.xyz vf05, 0(vi03)\n"
+            "\tlq.xyz vf24, 0(vi04)\n"
+            "\tadd.xyz vf05, vf24, vf00\n"
+            "\tiaddiu vi04, vi04, 1\n"
+            "\tiaddiu vi03, vi03, 1\n"
+            "\tiaddiu vi01, vi01, 1\n"
+            "\tibne vi01, vi02, loop_lid\n"
+            "\t--exit\n"
+            "\t--endexit\n";
+    }
+
     std::string genericMultiQGuardedStorePipelineSource()
     {
         return
@@ -1394,24 +1426,31 @@ TEST_CASE("Software pipeline: generic multi-Q prefixes emit delayed suffix store
     CHECK(blockContains(vsm, "loop_lid__DRAIN", "sq.xyz VF05, -2(VI03)"));
 }
 
-TEST_CASE("Software pipeline: loaded generic multi-Q drains prime the prolog branch boundary")
+TEST_CASE("Software pipeline: loaded generic multi-Q drains reject unproven separate bases")
 {
+    std::vector<std::string> args;
+    args.push_back("--enable-generic-software-pipelining");
+    std::string vsm = runEmitWithExtraArgs(genericLoadedMultiQUnknownBaseSource(), args);
+    REQUIRE(vsm.length() > 0);
+
+    CHECK(!contains(vsm, "loop_lid__PROLOG:"));
+    CHECK(!contains(vsm, "loop_lid__DRAIN:"));
+    CHECK(contains(vsm, "loop_lid:"));
+    CHECK(contains(vsm, "ibne VI01, VI02, loop_lid"));
+}
+
+TEST_CASE("Software pipeline: loaded generic multi-Q drains keep a store ahead of the load of its address")
+{
+    // vi03 and vi04 both start at 0 and step alike: each iteration loads
+    // what it just stored, so the store cannot be delayed past the load.
     std::vector<std::string> args;
     args.push_back("--enable-generic-software-pipelining");
     std::string vsm = runEmitWithExtraArgs(genericLoadedMultiQSuffixStoreDrainPipelineSource(), args);
     REQUIRE(vsm.length() > 0);
 
-    CHECK(contains(vsm, "loop_lid__PROLOG:"));
-    CHECK(contains(vsm, "loop_lid__DRAIN:"));
-    CHECK(contains(vsm, "ibeq VI01, VI02, loop_lid__DRAIN"));
-    CHECK(nextInstructionLineContains(vsm,
-                                      "ibeq VI01, VI02, loop_lid__DRAIN",
-                                      "div q, VF00w, VF00w"));
-    CHECK(appearsBeforeAfter(vsm,
-                             "loop_lid:",
-                             "sq.xyz",
-                             "ibne VI01, VI02, loop_lid"));
-    CHECK(blockContains(vsm, "loop_lid__DRAIN", "sq.xyz"));
+    CHECK(!contains(vsm, "loop_lid__DRAIN:"));
+    // A leading space keeps mulq.xyz from matching the load.
+    CHECK(appearsBeforeAfter(vsm, "loop_lid:", " sq.xyz", " lq.xyz"));
 }
 
 TEST_CASE("Software pipeline: generic path guards cloned multi-Q store prefixes")
