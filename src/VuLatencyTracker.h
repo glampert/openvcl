@@ -21,6 +21,11 @@ public:
 	VuLatencyTracker();
 
 	void reset();
+
+	// Takes on the pending latencies of another tracker, whose cycle c is
+	// this tracker's cycle c + shift: each ready cycle becomes the later of
+	// the two. Returns whether anything still pending at cycle `now` grew.
+	bool merge( const VuLatencyTracker& other, int shift, int now );
 	int readHazardDelay( const Token& token, const Token* partner, int currentCycle ) const;
 	void recordWrites( const Token& token, int issueCycle, bool forceMacFlagWrite = false );
 

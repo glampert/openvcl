@@ -31,6 +31,14 @@ namespace
 		const VuInstructionInfo* info = findVuInstructionInfo( mnemonic );
 		return info ? static_cast<int>( info->latency ) : fallback;
 	}
+
+	bool mergeCycle( int& cycle, int other, int pendingAfter )
+	{
+		if( other <= cycle )
+			return false;
+		cycle = other;
+		return other > pendingAfter;
+	}
 }
 
 VuLatencyTracker::VuLatencyTracker()
@@ -46,6 +54,44 @@ void VuLatencyTracker::reset()
 	m_lastClipwCycle = -10;
 	m_registerReadyCycle.clear();
 	m_registerProducerMnemonic.clear();
+}
+
+bool VuLatencyTracker::merge( const VuLatencyTracker& other, int shift, int now )
+{
+	bool changed = false;
+	changed = mergeCycle( m_qReadyCycle, other.m_qReadyCycle + shift, now ) || changed;
+	changed = mergeCycle( m_pReadyCycle, other.m_pReadyCycle + shift, now ) || changed;
+	// the flags are read four cycles after they are written
+	changed = mergeCycle( m_lastFMACCycle, other.m_lastFMACCycle + shift, now - 4 ) || changed;
+	changed = mergeCycle( m_lastClipwCycle, other.m_lastClipwCycle + shift, now - 4 ) || changed;
+
+	for( std::map<std::string, int>::const_iterator i = other.m_registerReadyCycle.begin();
+	     i != other.m_registerReadyCycle.end(); ++i )
+	{
+		const int ready = i->second + shift;
+		std::map<std::string, std::string>::const_iterator producer =
+		    other.m_registerProducerMnemonic.find( i->first );
+		std::map<std::string, int>::iterator mine = m_registerReadyCycle.find( i->first );
+		if( mine == m_registerReadyCycle.end() )
+		{
+			m_registerReadyCycle[i->first] = ready;
+			if( producer != other.m_registerProducerMnemonic.end() )
+				m_registerProducerMnemonic[i->first] = producer->second;
+			changed = (ready > now) || changed;
+			continue;
+		}
+
+		changed = mergeCycle( mine->second, ready, now ) || changed;
+
+		// a bypass only applies when the same instruction writes the register
+		// on every path
+		std::map<std::string, std::string>::iterator mineProducer = m_registerProducerMnemonic.find( i->first );
+		if( mineProducer != m_registerProducerMnemonic.end()
+		    && (producer == other.m_registerProducerMnemonic.end() || producer->second != mineProducer->second) )
+			m_registerProducerMnemonic.erase( mineProducer );
+	}
+
+	return changed;
 }
 
 int VuLatencyTracker::readHazardDelay( const Token& token,
