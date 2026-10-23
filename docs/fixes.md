@@ -18,7 +18,7 @@ on master.
 | 3 | Diagnostics: no `error:` tag, out-of-registers without a name or line, a failed build left a fresh .vsm | fix/diagnostics | merged, PR #4 |
 | 4 | `-c` changed the code (extra nop pairs) and left instructions uncommented | fix/emit-source | merged, PR #5 |
 | - | ASan/UBSan job in CI | ci/sanitizers | merged, PR #6 |
-| 5 | Range ends past the program when a branch is its last token (`tokens.end()` dereferenced) | fix/trailing-branch-range | open, PR #7 |
+| 5 | Range ends past the program when a branch is its last token (`tokens.end()` dereferenced) | fix/trailing-branch-range | merged, PR #7 |
 | 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | not submitted |
 | 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b, on 7a) | not submitted |
 | 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | not submitted |
