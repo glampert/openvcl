@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <bitset>
 
 namespace vcl
 {
@@ -1971,6 +1972,8 @@ namespace
 		}
 	}
 
+	// The VF registers a pipelined loop's scratch registers must not take: the
+	// ones its body names, and the ones holding values live across the loop.
 	void collectLoopVfBaseKeys( const VuLoopCandidate& loop, std::list<std::string>& bases )
 	{
 		for( std::vector<const Token*>::const_iterator i = loop.bodyTokens.begin(); i != loop.bodyTokens.end(); ++i )
@@ -1982,6 +1985,8 @@ namespace
 			collectVfBaseKeys( reads, bases );
 			collectVfBaseKeys( writes, bases );
 		}
+		for( std::list<std::string>::const_iterator i = loop.liveVfRegisters.begin(); i != loop.liveVfRegisters.end(); ++i )
+			addUniqueString( bases, *i );
 	}
 
 	std::string vfRegisterName( unsigned int index )
@@ -6186,6 +6191,150 @@ unsigned int vuIgnoredFlagWawResourcesForRemaining( std::list<Token>::const_iter
 	return mask;
 }
 
+namespace
+{
+	// lane l of VFr is bit r * 4 + l
+	typedef std::bitset<128> VuVfLanes;
+
+	void addVfLanes( const std::list<std::string>& keys, VuVfLanes& lanes )
+	{
+		static const std::string names = "xyzw";
+		for( std::list<std::string>::const_iterator i = keys.begin(); i != keys.end(); ++i )
+		{
+			// keys look like VF09.x
+			if( i->size() != 6 || i->compare( 0, 2, "VF" ) != 0 || (*i)[4] != '.' )
+				continue;
+			const unsigned int reg = static_cast<unsigned int>( std::atoi( i->substr( 2, 2 ).c_str() ) );
+			const std::string::size_type lane = names.find( (*i)[5] );
+			if( reg < 32 && lane != std::string::npos )
+				lanes.set( reg * 4 + lane );
+		}
+	}
+
+	// bal and jalr write their return address to a register
+	bool linkRegisterKey( const Token& token, std::string& key )
+	{
+		for( std::list<Token::Argument>::const_iterator a = token.arguments().begin(); a != token.arguments().end(); ++a )
+		{
+			if( (*a).flags() & Token::Argument::ADDRESS )
+				return vuRegisterKey( *a, key );
+		}
+		return false;
+	}
+
+	// The VF lanes live before each token: read on some path from it before
+	// they are written. Control flows on to the next token, to branch labels,
+	// and from jr/jalr back to the token after each bal/jalr that set their
+	// register; it stops at --endexit, where the block's out_vf registers are
+	// read. Only tokens that will be emitted count as writing.
+	void computeVfLiveIn( const std::vector<const Token*>& tokens,
+	                      const std::map<std::string, unsigned int>& labels,
+	                      std::vector<VuVfLanes>& liveIn )
+	{
+		const unsigned int count = static_cast<unsigned int>( tokens.size() );
+		std::vector<VuVfLanes> reads( count );
+		std::vector<VuVfLanes> writes( count );
+		std::vector< std::pair<std::string, unsigned int> > returns;
+		for( unsigned int n = 0; n < count; ++n )
+		{
+			const Token& token = *tokens[n];
+			std::list<std::string> keys;
+			collectVuRegisterReadKeys( token, keys );
+			addVfLanes( keys, reads[n] );
+			if( isVuEmittableInstruction( token ) )
+			{
+				keys.clear();
+				collectVuRegisterWriteKeys( token, keys );
+				addVfLanes( keys, writes[n] );
+			}
+
+			if( token.operand() && token.operand()->name() == "out_vf" && !token.arguments().empty() )
+			{
+				const unsigned int reg = static_cast<unsigned int>( token.arguments().front().regNumber() );
+				for( unsigned int lane = 0; lane < 4 && reg < 32; ++lane )
+					reads[n].set( reg * 4 + lane );
+			}
+
+			std::string link;
+			if( (n + 1 < count) && token.operand() && (token.operand()->unit() == Operand::BRU) && linkRegisterKey( token, link ) )
+				returns.push_back( std::make_pair( link, n + 1 ) );
+		}
+
+		std::vector< std::vector<unsigned int> > successors( count );
+		for( unsigned int n = 0; n < count; ++n )
+		{
+			const Token& token = *tokens[n];
+			if( token.operand() && token.operand()->name() == "--endexit" )
+				continue;
+
+			bool fallsThrough = true;
+			if( token.operand() && token.operand()->unit() == Operand::BRU )
+			{
+				// a conditional branch, or a call returning to the next token
+				std::string link;
+				fallsThrough = (token.operand()->flags() & Operand::DYNAMIC) || linkRegisterKey( token, link );
+
+				std::string label;
+				if( branchTargetLabel( token, label ) )
+				{
+					std::map<std::string, unsigned int>::const_iterator target = labels.find( label );
+					if( target != labels.end() )
+						successors[n].push_back( target->second );
+				}
+
+				for( std::list<Token::Argument>::const_iterator a = token.arguments().begin(); a != token.arguments().end(); ++a )
+				{
+					std::string key;
+					if( !((*a).flags() & Token::Argument::BRANCH) || (*a).type() != Token::Argument::INTEGER_REGISTER || !vuRegisterKey( *a, key ) )
+						continue;
+
+					// a register no bal/jalr sets may return anywhere
+					bool matched = false;
+					for( unsigned int r = 0; r < returns.size(); ++r )
+						matched = matched || (returns[r].first == key);
+					for( unsigned int r = 0; r < returns.size(); ++r )
+					{
+						if( !matched || (returns[r].first == key) )
+							successors[n].push_back( returns[r].second );
+					}
+				}
+			}
+
+			if( fallsThrough && (n + 1 < count) )
+				successors[n].push_back( n + 1 );
+		}
+
+		liveIn.assign( count, VuVfLanes() );
+		bool changed = true;
+		while( changed )
+		{
+			changed = false;
+			for( unsigned int n = count; n-- > 0; )
+			{
+				VuVfLanes out;
+				for( unsigned int s = 0; s < successors[n].size(); ++s )
+					out |= liveIn[ successors[n][s] ];
+
+				const VuVfLanes in = reads[n] | (out & ~writes[n]);
+				if( in != liveIn[n] )
+				{
+					liveIn[n] = in;
+					changed = true;
+				}
+			}
+		}
+	}
+
+	void addLiveVfRegisters( const VuVfLanes& lanes, std::list<std::string>& registers )
+	{
+		for( unsigned int reg = 0; reg < 32; ++reg )
+		{
+			if( ((lanes >> (reg * 4)) & VuVfLanes( 0xf )).any() )
+				addUniqueString( registers, vfRegisterName( reg ) );
+		}
+	}
+}
+
 std::vector<VuLoopCandidate> findVuLoopCandidates( const std::list<Token>& tokens )
 {
 	std::vector<const Token*> indexedTokens;
@@ -6200,6 +6349,7 @@ std::vector<VuLoopCandidate> findVuLoopCandidates( const std::list<Token>& token
 	}
 
 	std::vector<VuLoopCandidate> result;
+	std::vector<VuVfLanes> liveIn;
 	for( unsigned int branchIndex = 0; branchIndex < indexedTokens.size(); ++branchIndex )
 	{
 		const Token& token = *indexedTokens[branchIndex];
@@ -6210,6 +6360,9 @@ std::vector<VuLoopCandidate> findVuLoopCandidates( const std::list<Token>& token
 		std::map<std::string, unsigned int>::const_iterator target = labels.find( label );
 		if( target == labels.end() || target->second >= branchIndex )
 			continue;
+
+		if( liveIn.empty() )
+			computeVfLiveIn( indexedTokens, labels, liveIn );
 
 		VuLoopCandidate candidate;
 		candidate.label = label;
@@ -6230,6 +6383,10 @@ std::vector<VuLoopCandidate> findVuLoopCandidates( const std::list<Token>& token
 		for( unsigned int body = candidate.firstBodyTokenIndex; body <= candidate.lastBodyTokenIndex; ++body )
 			candidate.bodyTokens.push_back( indexedTokens[body] );
 		analyzeLoopCandidateResources( candidate );
+
+		addLiveVfRegisters( liveIn[candidate.labelTokenIndex], candidate.liveVfRegisters );
+		if( branchIndex + 1 < indexedTokens.size() )
+			addLiveVfRegisters( liveIn[branchIndex + 1], candidate.liveVfRegisters );
 
 		result.push_back( candidate );
 	}

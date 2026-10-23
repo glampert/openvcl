@@ -161,6 +161,9 @@ struct VuLoopCandidate
 	std::list<std::string> inductionRegisters;
 	std::vector<VuLoopInductionUpdate> inductionUpdates;
 	std::list<std::string> loopReadWriteRegisters;
+	// VF registers live where the loop is entered or left: the code around the
+	// loop still needs their values, whether or not the body names them
+	std::list<std::string> liveVfRegisters;
 	std::vector<const Token*> bodyTokens;
 	const Token* branchToken;
 };
