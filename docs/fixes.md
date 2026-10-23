@@ -21,7 +21,7 @@ on master.
 | 5 | Range ends past the program when a branch is its last token (`tokens.end()` dereferenced) | fix/trailing-branch-range | merged, PR #7 |
 | 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | not submitted |
 | 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b, on 7a) | not submitted |
-| 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | not submitted |
+| 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | open, PR #8 |
 | 9 | `--exit` outputs lost on taken-branch paths, and their registers reused before the exit | fix/exit-outputs (on 7b) | not submitted |
 | 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | not submitted |
 | 11 | Memory accesses through different base registers reordered | fix/memory-alias | experimental, ours only |

@@ -39,7 +39,7 @@ never go into a PR.
 |---|---|---|
 | main | upstream/master + every fix | upstream 3ea8bf5 merged, plus docs |
 | fix/loop-liveness (7a) | upstream/master | standalone; any time |
-| fix/pipeline-live-registers | upstream/master | submit first: smallest standalone fix, and 7b should follow it; PR text written |
+| fix/pipeline-live-registers | upstream/master | PR #8 open, awaiting review (sent 2026-10-23) |
 | fix/partial-write-ranges (7b) | fix/loop-liveness | after 7a and the pipeliner fix are merged; PR text not written yet |
 | fix/exit-outputs | fix/partial-write-ranges | to submit after 7b |
 | fix/cross-block-latency | upstream/master | independent; use the corrected PR text (register cases are timing-neutral) |
@@ -56,7 +56,7 @@ corpus baseline; move and rebuild it when upstream moves), `../openvcl-ci`,
 
 ## Next
 
-- Submission order: pipeline-live-registers; then cross-block-latency and 7a in any order; then 7b; then exit-outputs.
+- Submission order: pipeline-live-registers (PR #8, sent); then cross-block-latency and 7a in any order; then 7b; then exit-outputs.
 
 - Move quake-ps2 and quake2-ps2 to a build of our main (they use the installed
   openvcl 0.4.0 today). Their vu-checker submodules are at 3917e1b, committed
