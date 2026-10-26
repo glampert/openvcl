@@ -951,6 +951,7 @@ CodeGenerator::CodeGenerator()
 	m_strictScheduleSlots = false;
 	m_enableUpperMoves = false;
 	m_ignoredImplicitWawResources = VU_RESOURCE_NONE;
+	m_branchTargetStatesGrew = false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1056,6 +1057,7 @@ bool CodeGenerator::beginProcess(const std::list<Token>& tokens)
 	m_ignoredImplicitWawResources = VU_RESOURCE_NONE;
 
 	const bool emitTypedScheduleDirectly = m_strictScheduleSlots || !m_knownLoopOptimizations;
+	VuScheduledProgram scheduledProgram;
 	if( emitTypedScheduleDirectly )
 	{
 		if( !appliedGenericSoftwarePipeline )
@@ -1063,8 +1065,7 @@ bool CodeGenerator::beginProcess(const std::list<Token>& tokens)
 			fillBranchDelaySlots(workTokens);
 			fillDeadFallthroughBranchDelaySlots(workTokens);
 		}
-		if( !emitStrictScheduledProgram(workTokens, exitWritten) )
-			return false;
+		scheduledProgram = scheduleVuProgramReadyIssueSlotsWithFlagLiveness(workTokens);
 	}
 	else
 	{
@@ -1072,6 +1073,41 @@ bool CodeGenerator::beginProcess(const std::list<Token>& tokens)
 		workTokens.swap(scheduledTokens);
 		fillBranchDelaySlots(workTokens);
 		fillDeadFallthroughBranchDelaySlots(workTokens);
+	}
+
+	// The schedule pads each block for the results still in flight from the
+	// code before it in the program, not for those a branch into it leaves
+	// in flight. Each branch records what its target inherits, and the
+	// program is emitted again with that merged in at the labels, until the
+	// records stop growing: padding only ever moves a branch further from
+	// the writes before it, so they can grow a bounded number of times.
+	const std::list<Token> emittedTokens = workTokens;
+	const size_t headerLines = m_codeLines.size();
+	for( unsigned int pass = 0; ; ++pass )
+	{
+		if( pass == 64 )
+		{
+			Error::Display( Error( "Internal error: latencies carried to branch targets did not settle" ) );
+			return false;
+		}
+
+		m_codeLines.resize(headerLines);
+		m_sourceComments.clear();
+		m_currentCycle = 0;
+		m_latencyTracker.reset();
+		m_branchTargetStatesGrew = false;
+		exitWritten = true;
+
+	if( emitTypedScheduleDirectly )
+	{
+		if( !emitStrictScheduledProgram(workTokens, scheduledProgram, exitWritten) )
+			return false;
+	}
+	else
+	{
+		// the lookahead below takes the tokens it emits out of the list
+		workTokens.clear();
+		workTokens.insert(workTokens.end(), emittedTokens.begin(), emittedTokens.end());
 
 		for( std::list<Token>::iterator k = workTokens.begin(); k != workTokens.end(); )
 		{
@@ -1087,7 +1123,7 @@ bool CodeGenerator::beginProcess(const std::list<Token>& tokens)
 
 		//handle label
 		if(token.label().length()>0)
-			m_codeLines.push_back(token.label() + ":");
+			addLabelLine(token.label());
 
 		if(!token.operand())
 		{
@@ -1444,6 +1480,10 @@ bool CodeGenerator::beginProcess(const std::list<Token>& tokens)
 	}
 	}
 
+		if( !m_branchTargetStatesGrew )
+			break;
+	}
+
 	if( !exitWritten )
 	{
 		// Auto-terminate with an exit pair if the last instruction wasn't closed
@@ -1491,6 +1531,17 @@ void CodeGenerator::addSourceComment( const Token& token )
 	std::stringstream s;
 	s << " ; Line " << token.line().number() << ": " << token.line().content();
 	m_sourceComments.push_back( std::make_pair( m_codeLines.size(), s.str() ) );
+}
+
+void CodeGenerator::addLabelLine( const std::string& label )
+{
+	m_codeLines.push_back( label + ":" );
+
+	// the code after the label waits for what the branches to it leave in
+	// flight, as well as for what the code before it does
+	std::map<std::string, VuLatencyTracker>::const_iterator state = m_branchTargetStates.find( label );
+	if( state != m_branchTargetStates.end() )
+		m_latencyTracker.merge( state->second, m_currentCycle, m_currentCycle );
 }
 
 void CodeGenerator::emitWaitQ()
@@ -1610,6 +1661,7 @@ void CodeGenerator::emitSingleToken( const Token& token )
 			addNopLine();
 			m_currentCycle++;
 		}
+		recordBranchTargetState( token );
 	}
 	else
 	{
@@ -1685,6 +1737,7 @@ void CodeGenerator::emitBranchWithDelayFiller( const Token& branch, const Token&
 	m_codeLines.push_back(fillerLine);
 	recordRegisterWrites(filler, m_currentCycle);
 	m_currentCycle++;
+	recordBranchTargetState( branch );
 }
 
 void CodeGenerator::emitPairedTokens( const Token& a, const Token& b )
@@ -1713,6 +1766,8 @@ void CodeGenerator::emitPairedTokens( const Token& a, const Token& b )
 		addNopLine();
 		m_currentCycle++;
 	}
+	recordBranchTargetState( a );
+	recordBranchTargetState( b );
 }
 
 void CodeGenerator::emitPairedBranchWithDelayFiller( const Token& a, const Token& b, const Token& filler )
@@ -1764,6 +1819,8 @@ void CodeGenerator::emitPairedBranchWithDelayFiller( const Token& a, const Token
 	m_codeLines.push_back(fillerLine);
 	recordRegisterWrites(filler, m_currentCycle);
 	m_currentCycle++;
+	recordBranchTargetState( a );
+	recordBranchTargetState( b );
 }
 
 namespace
@@ -1983,7 +2040,7 @@ bool CodeGenerator::prepareStrictScheduledToken( const Token& token,
                                                  bool allowBranchDelayFiller )
 {
 	if( token.label().length() > 0 )
-		m_codeLines.push_back(token.label() + ":");
+		addLabelLine(token.label());
 
 	if( !token.operand() )
 		return false;
@@ -2054,9 +2111,8 @@ void CodeGenerator::emitStrictScheduledPadding( const VuScheduledIssueSlot& slot
 	}
 }
 
-bool CodeGenerator::emitStrictScheduledProgram( const std::list<Token>& tokens, bool& exitWritten )
+bool CodeGenerator::emitStrictScheduledProgram( const std::list<Token>& tokens, const VuScheduledProgram& program, bool& exitWritten )
 {
-	VuScheduledProgram program = scheduleVuProgramReadyIssueSlotsWithFlagLiveness(tokens);
 	std::vector<const VuScheduledIssueSlot*> slots;
 	for( std::vector<VuScheduledBasicBlock>::const_iterator block = program.blocks.begin();
 	     block != program.blocks.end();
@@ -2134,7 +2190,7 @@ bool CodeGenerator::emitStrictScheduledProgram( const std::list<Token>& tokens, 
 			if( bake )
 			{
 				// Emit the MAIN_LOOP label.
-				m_codeLines.push_back( bake->mainLabelTok->label() + ":" );
+				addLabelLine( bake->mainLabelTok->label() );
 
 				// Smart-tail substitution: if the last cycle has an empty
 				// lower lane, place the back-edge branch there to save a
@@ -2230,6 +2286,14 @@ bool CodeGenerator::emitStrictScheduledProgram( const std::list<Token>& tokens, 
 			emitUpperWithWait(*first, slot.paddingKind == VU_SCHEDULED_PADDING_WAITQ);
 			continue;
 		}
+
+		// the schedule's padding covers the block's own latencies; this adds
+		// what a branch into the block left in flight
+		if( firstEmits )
+			padForReadHazards(*first, secondEmits ? second : NULL);
+		else if( secondEmits )
+			padForReadHazards(*second, NULL);
+
 		const Token* branch = branchTokenInScheduledSlot(slot);
 		const Token* delayFiller = NULL;
 		unsigned int delayFillerSlot = i + 1;
@@ -2364,6 +2428,18 @@ void CodeGenerator::padForReadHazards( const Token& token, const Token* partner 
 void CodeGenerator::recordRegisterWrites( const Token& token, int issueCycle )
 {
 	m_latencyTracker.recordWrites( token, issueCycle, emitsAsUpperMove( token ) );
+}
+
+void CodeGenerator::recordBranchTargetState( const Token& branch )
+{
+	std::string label;
+	if( vuTokenBranchDelaySlots( branch ) == 0 || !branchTargetLabel( branch, label ) )
+		return;
+
+	// the branch and its delay slot are emitted: the target's first
+	// instruction issues at m_currentCycle
+	if( m_branchTargetStates[label].merge( m_latencyTracker, -m_currentCycle, 0 ) )
+		m_branchTargetStatesGrew = true;
 }
 
 unsigned int CodeGenerator::ignoredImplicitWawResourcesForRemaining( std::list<Token>::const_iterator begin,
