@@ -250,7 +250,17 @@ bool RegisterAllocator::process( std::list<Token>& tokens )
 			return false;
 	}
 
+	// one entry state per code block so far; record where each block starts
+	// before processing moves the states on
+	std::vector< std::pair< std::list<Token>::iterator, BranchState* > > blocks;
+
 	std::list<BranchState*>::iterator j;
+	for( j = m_states.begin(); j != m_states.end(); j++ )
+	{
+		if( *j )
+			blocks.push_back( std::make_pair( (*j)->current(), *j ) );
+	}
+
 	for( j = m_states.begin(); j != m_states.end(); j++ )
 	{
 		if( !(*j) )
@@ -259,6 +269,12 @@ bool RegisterAllocator::process( std::list<Token>& tokens )
 			return false;
 		}
 		if( !processBranchState( *j, tokens.end() ) )
+			return false;
+	}
+
+	for( std::vector< std::pair< std::list<Token>::iterator, BranchState* > >::iterator b = blocks.begin(); b != blocks.end(); ++b )
+	{
+		if( !completeLiveRanges( b->first, b->second->exitPoint(), b->second ) )
 			return false;
 	}
 
@@ -531,6 +547,330 @@ bool RegisterAllocator::processBranchState( BranchState* state, std::list<Token>
 		{
 			Error::Display( Error( "Output register conflict", *(state->exitPoint()) ) );
 			return false;
+		}
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+	// A read or write of a named VF or VI register in a code block.
+	struct VariableAccess
+	{
+		unsigned int node;				// the token's position in the block
+		unsigned int lanes;				// the fields of a VF access; 1 for VI
+		Dependency* dependency;		// NULL where processBranchState never got to
+	};
+
+	struct VariableAccesses
+	{
+		std::vector<VariableAccess> reads;
+		std::vector<VariableAccess> writes;
+	};
+
+	typedef std::pair<Alias::Type, std::string> Variable;
+
+	// A read, the writes that reach it, and the block's tokens in between.
+	struct ReachedRead
+	{
+		std::string name;
+		Dependency* read;
+		std::vector<Dependency*> writes;
+		std::vector<unsigned int> live;
+	};
+
+	bool sameRegister( const Token::Argument& a, const Token::Argument& b )
+	{
+		if( a.content() != b.content() )
+			return false;
+		if( a.content() == Token::Argument::ALIAS )
+			return a.alias() == b.alias();
+		return a.regNumber() == b.regNumber();
+	}
+
+	void reportRegisterConflict( const std::string& name, const Register* a, const Register* b, const Token& token )
+	{
+		Error::Display( Error( "Register conflict: " + name + " has to be in both " + a->name() + " and " + b->name(), token ) );
+	}
+
+	bool joinWebs( Dependency* use, Dependency* def, const std::string& name )
+	{
+		Alias* useAlias = use->alias();
+		Alias* defAlias = def->alias();
+		if( useAlias == defAlias )
+			return true;
+
+		if( useAlias->allocatedRegister() && defAlias->allocatedRegister() && (useAlias->allocatedRegister() != defAlias->allocatedRegister()) )
+		{
+			reportRegisterConflict( name, useAlias->allocatedRegister(), defAlias->allocatedRegister(), use->token() );
+			return false;
+		}
+
+		use->depend( def );
+		return true;
+	}
+}
+
+bool RegisterAllocator::completeLiveRanges( std::list<Token>::iterator begin, std::list<Token>::iterator end, BranchState* entry )
+{
+	std::vector< std::list<Token>::iterator > nodes;
+	std::map< const Token*, unsigned int > index;
+	for( std::list<Token>::iterator t = begin; t != end; ++t )
+	{
+		index[ &*t ] = static_cast<unsigned int>( nodes.size() );
+		nodes.push_back( t );
+	}
+	const unsigned int count = static_cast<unsigned int>( nodes.size() );
+	if( !count )
+		return true;
+
+	// control flow: fall-through, branches to labels, and jr/jalr to the
+	// instruction after each bal/jalr that sets their register
+
+	std::vector< std::pair<const Token::Argument*, unsigned int> > returns;
+	for( unsigned int n = 0; n + 1 < count; ++n )
+	{
+		const Token& token = *nodes[n];
+		if( !token.operand() || token.operand()->unit() != Operand::BRU )
+			continue;
+		for( std::list<Token::Argument>::const_iterator a = token.arguments().begin(); a != token.arguments().end(); ++a )
+		{
+			if( (*a).flags() & Token::Argument::ADDRESS )
+				returns.push_back( std::make_pair( &*a, n + 1 ) );
+		}
+	}
+
+	std::vector< std::vector<unsigned int> > successors( count );
+	for( unsigned int n = 0; n < count; ++n )
+	{
+		const Token& token = *nodes[n];
+		bool fallsThrough = true;
+
+		if( token.operand() && token.operand()->unit() == Operand::BRU )
+		{
+			fallsThrough = (token.operand()->flags() & Operand::DYNAMIC) != 0;
+
+			for( std::list<Token::Argument>::const_iterator a = token.arguments().begin(); a != token.arguments().end(); ++a )
+			{
+				if( !((*a).flags() & Token::Argument::BRANCH) )
+					continue;
+
+				if( (*a).type() == Token::Argument::IMMEDIATE )
+				{
+					std::map< std::string, std::list<Token>::iterator >::const_iterator label = m_labels.find( (*a).immediate() );
+					if( label == m_labels.end() )
+						continue;
+					std::map< const Token*, unsigned int >::const_iterator target = index.find( &*label->second );
+					if( target != index.end() )
+						successors[n].push_back( target->second );
+				}
+				else if( (*a).type() == Token::Argument::INTEGER_REGISTER )
+				{
+					for( unsigned int r = 0; r < returns.size(); ++r )
+					{
+						if( sameRegister( *returns[r].first, *a ) )
+							successors[n].push_back( returns[r].second );
+					}
+				}
+			}
+		}
+
+		if( fallsThrough && n + 1 < count )
+			successors[n].push_back( n + 1 );
+	}
+
+	std::vector< std::vector<unsigned int> > predecessors( count );
+	for( unsigned int n = 0; n < count; ++n )
+	{
+		for( unsigned int s = 0; s < successors[n].size(); ++s )
+			predecessors[ successors[n][s] ].push_back( n );
+	}
+
+	// every read and write of a named register, by variable
+
+	std::map< Variable, VariableAccesses > variables;
+	for( unsigned int n = 0; n < count; ++n )
+	{
+		for( std::list<Token::Argument>::const_iterator a = nodes[n]->arguments().begin(); a != nodes[n]->arguments().end(); ++a )
+		{
+			if( (*a).content() != Token::Argument::ALIAS )
+				continue;
+			if( ((*a).type() != Token::Argument::FLOAT_REGISTER) && ((*a).type() != Token::Argument::INTEGER_REGISTER) )
+				continue;
+
+			const bool isFloat = ((*a).type() == Token::Argument::FLOAT_REGISTER);
+
+			// a broadcast named by the opcode (maddaw, mulz) leaves its operand
+			// without fields: it reads the token's broadcast lane
+			unsigned int lanes = 1;
+			if( isFloat )
+			{
+				lanes = (*a).fields();
+				if( !lanes && ((*a).flags() & Token::Argument::BROADCAST) )
+					lanes = nodes[n]->broadcast();
+				if( !lanes )
+					lanes = Token::X|Token::Y|Token::Z|Token::W;
+			}
+
+			VariableAccess access;
+			access.node = n;
+			access.lanes = lanes;
+			access.dependency = (*a).dependency();
+
+			VariableAccesses& accesses = variables[ Variable( isFloat ? Alias::FLOAT : Alias::INTEGER, (*a).alias() ) ];
+			if( (*a).flags() & Token::Argument::WRITE )
+				accesses.writes.push_back( access );
+			else if( access.dependency )
+				accesses.reads.push_back( access );
+		}
+	}
+
+	std::vector<ReachedRead> reached;
+	std::map< Variable, std::vector<Dependency*> > inputReads;
+
+	for( std::map< Variable, VariableAccesses >::const_iterator v = variables.begin(); v != variables.end(); ++v )
+	{
+		const std::vector<VariableAccess>& writes = v->second.writes;
+		const bool isInput = (entry->inputRegister( v->first.first, v->first.second ) != NULL);
+
+		// where a write, or the block entry for an input, may have set the variable
+
+		std::vector<bool> set( count, false );
+		std::vector<unsigned int> work;
+		for( unsigned int w = 0; w < writes.size(); ++w )
+			work.push_back( writes[w].node );
+		if( isInput )
+			work.push_back( 0 );
+		while( !work.empty() )
+		{
+			const unsigned int n = work.back();
+			work.pop_back();
+			if( set[n] )
+				continue;
+			set[n] = true;
+			for( unsigned int s = 0; s < successors[n].size(); ++s )
+				work.push_back( successors[n][s] );
+		}
+
+		for( std::vector<VariableAccess>::const_iterator r = v->second.reads.begin(); r != v->second.reads.end(); ++r )
+		{
+			// back from the read until writes cover the lanes it reads
+
+			std::vector<unsigned int> followed( count, 0 );
+			std::vector<bool> reaching( writes.size(), false );
+			bool reachesEntry = ((*r).node == 0);
+
+			std::vector< std::pair<unsigned int, unsigned int> > back;
+			for( unsigned int p = 0; p < predecessors[(*r).node].size(); ++p )
+				back.push_back( std::make_pair( predecessors[(*r).node][p], (*r).lanes ) );
+
+			while( !back.empty() )
+			{
+				const unsigned int n = back.back().first;
+				unsigned int lanes = back.back().second & ~followed[n];
+				back.pop_back();
+				if( !lanes )
+					continue;
+				followed[n] |= lanes;
+
+				unsigned int written = 0;
+				for( unsigned int w = 0; w < writes.size(); ++w )
+				{
+					if( (writes[w].node == n) && (writes[w].lanes & lanes) )
+					{
+						reaching[w] = true;
+						written |= writes[w].lanes;
+					}
+				}
+				lanes &= ~written;
+				if( !lanes )
+					continue;
+
+				if( n == 0 )
+					reachesEntry = true;
+				for( unsigned int p = 0; p < predecessors[n].size(); ++p )
+					back.push_back( std::make_pair( predecessors[n][p], lanes ) );
+			}
+
+			ReachedRead read;
+			read.name = v->first.second;
+			read.read = (*r).dependency;
+			for( unsigned int w = 0; w < writes.size(); ++w )
+			{
+				if( reaching[w] && writes[w].dependency )
+					read.writes.push_back( writes[w].dependency );
+			}
+			// a path from the entry without a write leaves the variable unset
+			// there: that stretch is not part of its range
+			for( unsigned int n = 0; n < count; ++n )
+			{
+				if( (n == (*r).node) || (followed[n] && set[n]) )
+					read.live.push_back( n );
+			}
+			reached.push_back( read );
+
+			if( reachesEntry && isInput )
+				inputReads[ v->first ].push_back( (*r).dependency );
+		}
+	}
+
+	// join each read with the writes that reach it, and the reads of an input
+	// that see its value from the entry
+
+	for( std::vector<ReachedRead>::const_iterator r = reached.begin(); r != reached.end(); ++r )
+	{
+		for( std::vector<Dependency*>::const_iterator w = (*r).writes.begin(); w != (*r).writes.end(); ++w )
+		{
+			if( !joinWebs( (*r).read, *w, (*r).name ) )
+				return false;
+		}
+	}
+
+	for( std::map< Variable, std::vector<Dependency*> >::const_iterator i = inputReads.begin(); i != inputReads.end(); ++i )
+	{
+		const std::vector<Dependency*>& reads = i->second;
+		for( unsigned int k = 1; k < reads.size(); ++k )
+		{
+			if( !joinWebs( reads[0], reads[k], i->first.second ) )
+				return false;
+		}
+
+		const Register* input = entry->inputRegister( i->first.first, i->first.second );
+		Alias* alias = reads[0]->alias();
+		if( !alias->allocatedRegister() )
+			alias->setAllocatedRegister( input );
+		else if( alias->allocatedRegister() != input )
+		{
+			reportRegisterConflict( i->first.second, alias->allocatedRegister(), input, reads[0]->token() );
+			return false;
+		}
+	}
+
+	// after the joins, each read's alias is live from the writes to the read
+
+	for( std::vector<ReachedRead>::const_iterator r = reached.begin(); r != reached.end(); ++r )
+	{
+		Alias* alias = (*r).read->alias();
+		const std::vector<unsigned int>& live = (*r).live;
+		for( unsigned int k = 0; k < live.size(); ++k )
+		{
+			unsigned int start = nodes[ live[k] ]->lineNumber();
+			unsigned int stop = start;
+
+			// no other token sits between two live tokens in a row
+			if( (k + 1 < live.size()) && (live[k + 1] == live[k] + 1) )
+			{
+				const unsigned int next = nodes[ live[k + 1] ]->lineNumber();
+				if( next < start )
+					start = next;
+				else
+					stop = next;
+			}
+
+			alias->addRange( start, stop );
 		}
 	}
 
