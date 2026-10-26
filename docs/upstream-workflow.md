@@ -38,10 +38,10 @@ never go into a PR.
 | Branch | Base | State |
 |---|---|---|
 | main | upstream/master + every fix | upstream 786f856 merged, plus docs |
-| fix/loop-liveness (7a) | upstream/master | standalone; any time |
+| fix/loop-liveness (7a) | upstream/master | PR #9 open, awaiting review |
 | fix/partial-write-ranges (7b) | fix/loop-liveness | after 7a is merged (the pipeliner fix is in); PR text not written yet |
 | fix/exit-outputs | fix/partial-write-ranges | to submit after 7b |
-| fix/cross-block-latency | upstream/master | independent; use the corrected PR text (register cases are timing-neutral) |
+| fix/cross-block-latency | upstream/master | PR #10 open, awaiting review |
 | fix/memory-alias | upstream/master | experimental; maintainers have their own version on `optimizations` |
 | ci/sce-vcl-check | orphan | tool branch, worktree `../openvcl-ci` |
 | test/local-corpus | orphan | the corpus, worktree `../openvcl-corpus`; never merged |
@@ -56,7 +56,7 @@ corpus baseline; move and rebuild it when upstream moves), `../openvcl-ci`,
 
 ## Next
 
-- Submission order: cross-block-latency and 7a in any order; then 7b; then exit-outputs. (pipeline-live-registers merged as PR #8.)
+- Submission order: 7b once PR #9 (7a) is merged; then exit-outputs. PR #10 (cross-block-latency) is independent.
 
 - Move quake-ps2 and quake2-ps2 to a build of our main (they use the installed
   openvcl 0.4.0 today). Their vu-checker submodules are at 3917e1b, committed

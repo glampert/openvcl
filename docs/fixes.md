@@ -19,11 +19,11 @@ on master.
 | 4 | `-c` changed the code (extra nop pairs) and left instructions uncommented | fix/emit-source | merged, PR #5 |
 | - | ASan/UBSan job in CI | ci/sanitizers | merged, PR #6 |
 | 5 | Range ends past the program when a branch is its last token (`tokens.end()` dereferenced) | fix/trailing-branch-range | merged, PR #7 |
-| 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | not submitted |
+| 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | open, PR #9 |
 | 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b, on 7a) | not submitted |
 | 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | merged, PR #8 |
 | 9 | `--exit` outputs lost on taken-branch paths, and their registers reused before the exit | fix/exit-outputs (on 7b) | not submitted |
-| 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | not submitted |
+| 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | open, PR #10 |
 | 11 | Memory accesses through different base registers reordered | fix/memory-alias | experimental, ours only |
 
 ## Details
