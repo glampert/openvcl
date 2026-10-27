@@ -33,22 +33,21 @@ Sync main with `git merge upstream/master` (ps2dev merges PRs with merge
 commits). Force-pushes only with an explicit OK. The corpus and these docs
 never go into a PR.
 
-## Branches (after PR #8)
+## Branches (after PRs #9 and #10)
 
 | Branch | Base | State |
 |---|---|---|
-| main | upstream/master + every fix | upstream 786f856 merged, plus docs |
-| fix/loop-liveness (7a) | upstream/master | PR #9 open, awaiting review |
-| fix/partial-write-ranges (7b) | fix/loop-liveness | after 7a is merged (the pipeliner fix is in); PR text not written yet |
+| main | upstream/master + every fix | upstream 17cbadb merged, plus docs |
+| fix/partial-write-ranges (7b) | upstream/master (its base ff25bee is 7a, now on master) | PR text written; verified on 17cbadb: tests pass, 25 corpus programs change, 1 new (Tyra stapip_cull_td), 4 vu-checker findings fixed, nothing new |
 | fix/exit-outputs | fix/partial-write-ranges | to submit after 7b |
-| fix/cross-block-latency | upstream/master | PR #10 open, awaiting review |
 | fix/memory-alias | upstream/master | experimental; maintainers have their own version on `optimizations` |
 | ci/sce-vcl-check | orphan | tool branch, worktree `../openvcl-ci` |
 | test/local-corpus | orphan | the corpus, worktree `../openvcl-corpus`; never merged |
 
 Merged upstream and deleted: fix/clipw-implicit-w (#2), fix/immediate-ranges
 (#3), fix/diagnostics (#4), fix/emit-source (#5), ci/sanitizers (#6), fix/trailing-branch-range (#7),
-fix/pipeline-live-registers (#8).
+fix/pipeline-live-registers (#8), fix/loop-liveness (#9),
+fix/cross-block-latency (#10).
 
 Worktrees next to this repo: `../openvcl-baseline` (upstream/master build, the
 corpus baseline; move and rebuild it when upstream moves), `../openvcl-ci`,
@@ -56,7 +55,7 @@ corpus baseline; move and rebuild it when upstream moves), `../openvcl-ci`,
 
 ## Next
 
-- Submission order: 7b once PR #9 (7a) is merged; then exit-outputs. PR #10 (cross-block-latency) is independent.
+- Submission order: 7b (partial-write-ranges) now; exit-outputs once 7b is merged.
 
 - Move quake-ps2 and quake2-ps2 to a build of our main (they use the installed
   openvcl 0.4.0 today). Their vu-checker submodules are at 3917e1b, committed

@@ -5,7 +5,7 @@ quake2-ps2 (and quake-ps2) build their VU1 programs with
 on the result to catch silent miscompiles. Each problem below was reproduced
 with ps2dev/openvcl v0.4.0 (what ps2toolchain-dvp installs), fixed on its own
 `fix/<name>` branch off `upstream/master`, and merged into our `main`. Status as
-of 2026-10-23; see [upstream-workflow.md](upstream-workflow.md) for the process.
+of 2026-10-27; see [upstream-workflow.md](upstream-workflow.md) for the process.
 
 Every fix keeps the corpus byte-identical except where the change is intended
 and listed (see [testing.md](testing.md)), and adds integration tests that fail
@@ -19,11 +19,11 @@ on master.
 | 4 | `-c` changed the code (extra nop pairs) and left instructions uncommented | fix/emit-source | merged, PR #5 |
 | - | ASan/UBSan job in CI | ci/sanitizers | merged, PR #6 |
 | 5 | Range ends past the program when a branch is its last token (`tokens.end()` dereferenced) | fix/trailing-branch-range | merged, PR #7 |
-| 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | open, PR #9 |
-| 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b, on 7a) | not submitted |
+| 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | merged, PR #9 |
+| 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b) | PR text written, to open next |
 | 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | merged, PR #8 |
 | 9 | `--exit` outputs lost on taken-branch paths, and their registers reused before the exit | fix/exit-outputs (on 7b) | not submitted |
-| 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | open, PR #10 |
+| 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | merged, PR #10 |
 | 11 | Memory accesses through different base registers reordered | fix/memory-alias | experimental, ours only |
 
 ## Details
@@ -64,8 +64,10 @@ loop) and Tyra (gifSetTag clobbered across MSCNT continuations).
 **7. Partial-write ranges (7b).** A partial write was joined to the earlier
 value whenever the variable had other lanes, so values stayed live for the
 whole program; now only if a kept lane is read later. Tyra stapip_cull_td
-compiles. Should be submitted after the pipeliner fix, since it exposes more of
-that bug in ps2gl `*_quad`/`*_tri`.
+compiles. Submitted after the pipeliner fix (#8), since it exposed more of
+that bug in ps2gl `*_quad`/`*_tri`; it also clears the one regalloc finding
+vu-checker still reports on master in `general_tri`, `general_pv_diff_tri` and
+the `_quad` variants. 25 corpus programs change.
 
 **8. Pipeline live registers.** `assignRotationScratchRegisters` and the kernel
 renames treated a VF register the loop body does not name as free; registers
