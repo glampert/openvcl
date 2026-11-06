@@ -1,0 +1,74 @@
+# Runs SCE's vcl 1.4beta7 natively (x86-64 runner, Ubuntu 20.04 container with
+# the i386 runtime) on the vcl-re corpus inputs, the way the corpus was
+# recorded under emulation (`vcl -t1 -uCORPUS NAME.vcl`). At native speed the
+# watchdog's alarm(2) budgets are real seconds, so the time-outs and the
+# outputs show what an unemulated run produces. Each input runs REPEATS times
+# to show run-to-run variation. Results go to the job log and an artifact.
+#
+# The binary is not committed: it is fetched from Tyra at a pinned commit and
+# checked against its SHA-256, as glampert/openvcl's sce-vcl-check job does.
+
+name: vcl native corpus
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: runs per input
+        default: "3"
+      args:
+        description: vcl options before the input file
+        default: "-t1 -uCORPUS"
+
+permissions:
+  contents: read
+
+env:
+  TYRA_COMMIT: c59f406af134713b62656114846ac8d588c6247c
+  VCL_SHA256: 83bee75205b5b0f37dbefc2c2769eba2c353befa532472c49aedb2ebaf168274
+
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install the 32-bit runtime and git
+        run: |
+          dpkg --add-architecture i386
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates git bc libc6:i386 libstdc++5:i386
+
+      - uses: actions/checkout@v4
+
+      - name: Fetch Tyra (pinned) and check the vcl binary
+        run: |
+          git init -q tyra
+          git -C tyra fetch -q --depth 1 https://github.com/h4570/tyra.git "$TYRA_COMMIT"
+          git -C tyra checkout -q FETCH_HEAD
+          echo "$VCL_SHA256  tyra/assets/vcl" | sha256sum -c -
+          chmod +x tyra/assets/vcl
+          uname -a; nproc; grep -m1 "model name" /proc/cpuinfo
+
+      - name: vcl on the corpus
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARDS: 4
+          REPEATS: ${{ inputs.repeats || '3' }}
+          ARGS: ${{ inputs.args || '-t1 -uCORPUS' }}
+        run: ./run_corpus.sh tyra/assets/vcl inputs "out/shard$SHARD"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vcl-native-shard${{ matrix.shard }}
+          path: out/
