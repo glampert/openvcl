@@ -5,7 +5,7 @@ quake2-ps2 (and quake-ps2) build their VU1 programs with
 on the result to catch silent miscompiles. Each problem below was reproduced
 with ps2dev/openvcl v0.4.0 (what ps2toolchain-dvp installs), fixed on its own
 `fix/<name>` branch off `upstream/master`, and merged into our `main`. Status as
-of 2026-11-01; see [upstream-workflow.md](upstream-workflow.md) for the process.
+of 2026-11-10; see [upstream-workflow.md](upstream-workflow.md) for the process.
 
 Every fix keeps the corpus byte-identical except where the change is intended
 and listed (see [testing.md](testing.md)), and adds integration tests that fail
@@ -22,7 +22,7 @@ on master.
 | 6 | Loop-carried values lose their live range past an inner branch | fix/loop-liveness (7a) | merged, PR #9 |
 | 7 | Partial writes joined to the old value although the kept lanes are dead (Tyra stapip_cull_td ran out of VF registers) | fix/partial-write-ranges (7b) | merged, PR #11 |
 | 8 | Software pipeliner reuses registers live across the loop | fix/pipeline-live-registers | merged, PR #8 |
-| 9 | `--exit` outputs lost on taken-branch paths, and their registers reused before the exit | fix/exit-outputs | PR text written, to open next |
+| 9 | `--exit` outputs lost on taken-branch paths, and their registers reused before the exit | fix/exit-outputs | merged, PR #12 |
 | 10 | Flag, VI-test and register latencies not carried across labels and branches | fix/cross-block-latency | merged, PR #10 |
 | 11 | Memory accesses through different base registers reordered | fix/memory-alias | experimental, ours only |
 
@@ -93,7 +93,12 @@ registers are tracked as root plus constant through `iaddiu`/`isubiu` so
 related addresses still compare. Our port also fixes a hole in upstream's
 pipeliner check: a hoisted next-iteration load was compared with the delayed
 store without the loop step, so `lq -1(vi03)` after `sq 0(vi03)` / step 1 was
-hoisted above the store it reads. 21 of 46 corpus programs change; SCE vcl has
+hoisted above the store it reads. 21 of 46 corpus programs change, at a cost:
+measured on a5e9dbe with the cycle model, ps2gl's transform loops get 25% to
+2x slower (the pipeliner can no longer overlap the next vertex's loads through
+`next_input` with stores through `next_output`), their light loops 10-48%, Tyra's
+vertexLoop 1-6%; nothing in the corpus really aliases. An opt-in flag or a no-alias
+hint may suit the maintainers better; SCE vcl has
 the same bug (see [sce-vcl-comparison.md](sce-vcl-comparison.md#where-sce-is-wrong)).
 
 ## Not openvcl, or not fixed
